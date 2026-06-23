@@ -1,0 +1,19 @@
+<div style="max-width: 400px; margin: 80px auto; padding: 30px; background: #f8f9fa; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: sans-serif;">
+  <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Iniciar Sesión</h2>
+  
+  <div style="margin-bottom: 15px;">
+    <label style="display: block; margin-bottom: 5px; color: #666;">Correo Electrónico:</label>
+    <input type="email" [(ngModel)]="email" placeholder="ejemplo@empresa.com" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+  </div>
+
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 5px; color: #666;">Contraseña:</label>
+    <input type="password" [(ngModel)]="contrasena" placeholder="********" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+  </div>
+
+  <button (click)="onLogin()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+    Entrar
+  </button>
+
+  <p *ngIf="errorMensaje" style="color: red; text-align: center; margin-top: 15px; font-weight: bold;">{{ errorMensaje }}</p>
+</div>

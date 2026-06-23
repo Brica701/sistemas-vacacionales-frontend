@@ -1,0 +1,107 @@
+<div style="max-width: 1100px; margin: 40px auto; font-family: sans-serif; padding: 0 20px;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 30px;">
+    <h2 style="color: #007bff; margin: 0;">Panel del Empleado</h2>
+    <a href="/login" style="padding: 6px 12px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">Cerrar Sesión</a>
+  </div>
+
+  <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 40px;">
+    
+    <div style="flex: 1; min-width: 320px; background: #f8f9fa; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; height: fit-content;">
+      <h3 style="margin-top: 0; color: #333; margin-bottom: 20px;">Solicitar Nuevas Vacaciones</h3>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 14px;">Fecha de Inicio:</label>
+        <input type="date" [(ngModel)]="fechaInicio" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 14px;">Fecha de Fin:</label>
+        <input type="date" [(ngModel)]="fechaFin" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+
+      <button (click)="enviarSolicitud()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;">
+        Enviar Solicitud
+      </button>
+
+      <p *ngIf="mensajeError" style="color: #dc3545; margin-top: 15px; font-weight: bold; font-size: 14px; text-align: center; margin-bottom: 0;">⚠️ {{ mensajeError }}</p>
+    </div>
+
+    <div style="flex: 1.5; min-width: 380px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <button (click)="cambiarMes(-1)" style="padding: 6px 14px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; user-select: none;">&lt;</button>
+        <h3 style="margin: 0; color: #2d3748; min-width: 160px; text-align: center; font-size: 18px;">
+          {{ nombresMeses[fechaActual.getMonth()] }} {{ fechaActual.getFullYear() }}
+        </h3>
+        <button (click)="cambiarMes(1)" style="padding: 6px 14px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; user-select: none;">&gt;</button>
+      </div>
+
+      <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; font-size: 12px; font-weight: bold;">
+        <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #28a745; display: inline-block; border-radius: 2px;"></span> Aprobado</div>
+        <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #ffc107; display: inline-block; border-radius: 2px;"></span> Pendiente</div>
+        <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #dc3545; display: inline-block; border-radius: 2px;"></span> Rechazado</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center;">
+        <div *ngFor="let d of ['Lu','Ma','Mi','Ju','Vi','Sá','Do']" style="font-weight: bold; color: #718096; padding-bottom: 5px; font-size: 13px;">{{d}}</div>
+        
+        <div *ngFor="let dia of diasDelMes" 
+             style="padding: 10px 0; border-radius: 4px; font-size: 14px; font-weight: 500;"
+             [ngStyle]="{
+               'background-color': obtenerEstadoDia(dia) === 'Aprobado' ? '#28a745' : 
+                                   obtenerEstadoDia(dia) === 'Pendiente' ? '#ffc107' : 
+                                   obtenerEstadoDia(dia) === 'Rechazado' ? '#dc3545' : 
+                                   dia ? '#f7fafc' : 'transparent',
+               'color': (obtenerEstadoDia(dia) !== 'libre' && obtenerEstadoDia(dia) !== 'vacio') ? 'white' : '#2d3748',
+               'border': dia ? '1px solid #edf2f7' : 'none'
+             }">
+          {{ dia }}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div>
+    <h3 style="color: #333; margin-bottom: 15px;">Historial Detallado de Solicitudes</h3>
+    
+    <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <thead>
+        <tr style="background: #007bff; color: white; text-align: left;">
+          <th style="padding: 12px; border: 1px solid #dee2e6;">ID</th>
+          <th style="padding: 12px; border: 1px solid #dee2e6;">Periodo</th>
+          <th style="padding: 12px; border: 1px solid #dee2e6;">Días Hábiles</th>
+          <th style="padding: 12px; border: 1px solid #dee2e6;">Estado</th>
+          <th style="padding: 12px; border: 1px solid #dee2e6;">Observaciones / Motivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of misSolicitudes">
+          <td style="padding: 12px; border: 1px solid #dee2e6; color: #666;">#{{ s.id }}</td>
+          <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: 500;">{{ s.fechaInicio }} al {{ s.fechaFin }}</td>
+          <td style="padding: 12px; border: 1px solid #dee2e6;">{{ s.diasSolicitados }} días</td>
+          <td style="padding: 12px; border: 1px solid #dee2e6;">
+            <span [ngStyle]="{
+              'padding': '4px 8px', 'border-radius': '4px', 'font-size': '12px', 'font-weight': 'bold', 'color': 'white',
+              'background-color': s.estado === 'Aprobado' ? '#28a745' : s.estado === 'Rechazado' ? '#dc3545' : '#ffc107'
+            }">
+              {{ s.estado || 'Pendiente' }}
+            </span>
+          </td>
+          <td style="padding: 12px; border: 1px solid #dee2e6; color: #666; font-style: italic;">
+            {{ s.motivoRechazo || '-' }}
+          </td>
+        </tr>
+        
+        <tr *ngIf="misSolicitudes.length === 0">
+          <td colspan="5" style="padding: 30px; text-align: center; color: #999; font-style: italic;">
+            Aún no has solicitado ningún periodo de vacaciones.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
