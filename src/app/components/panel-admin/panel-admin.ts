@@ -1,24 +1,23 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../services/api'; // Asegúrate de que esta ruta apunte a tu api.ts de servicios
+import { ApiService } from '../../services/api';
 
 @Component({
   selector: 'app-panel-admin',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './panel-admin.html', 
-  styleUrl: './panel-admin.css'
+  templateUrl: './panel-admin.html',
+  styleUrl: './panel-admin.css',
 })
 export class PanelAdminComponent implements OnInit {
-
-  // --- ARRAYS DE DATOS REALES (Se llenarán desde Neon) ---
+  // --- ARRAYS DE DATOS REALES ---
   usuarios: any[] = [];
   puestos: any[] = [];
   delegaciones: any[] = [];
   festivos: any[] = [];
   solicitudesPendientes: any[] = [];
-  todasLasSolicitudes: any[] = []; 
+  todasLasSolicitudes: any[] = []; // Contiene Aprobadas, Rechazadas y Pendientes
 
   // --- MODELOS PARA FORMULARIOS ---
   nuevoUsuario: any = { id: null, nombre: '', email: '', puesto: '', delegacion: '' };
@@ -26,15 +25,25 @@ export class PanelAdminComponent implements OnInit {
   nuevaDelegacion: any = { id: null, nombre: '', ciudad: '' };
   nuevoFestivo: any = { id: null, fecha: '', descripcion: '', delegacionId: '' };
 
-  motivosRechazo: { [key: number]: string } = {}; 
+  motivosRechazo: { [key: number]: string } = {};
   mensajeError: string = '';
 
   // --- VARIABLES DEL CALENDARIO GLOBAL ---
   fechaActual: Date = new Date();
   diasDelMes: (number | null)[] = [];
   nombresMeses: string[] = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
   ];
 
   // --- CONTROL DE PESTAÑAS ---
@@ -50,45 +59,48 @@ export class PanelAdminComponent implements OnInit {
   cargarDatos(): void {
     // 1. Cargar Usuarios
     this.apiService.getUsuarios().subscribe({
-      next: (data: any[]) => this.usuarios = data,
-      error: (err) => console.error('Error al cargar usuarios desde Neon:', err)
+      next: (data: any[]) => (this.usuarios = data || []),
+      error: (err) => console.error('Error al cargar usuarios:', err),
     });
 
     // 2. Cargar Puestos
     this.apiService.getPuestos().subscribe({
-      next: (data: any[]) => this.puestos = data,
-      error: (err) => console.error('Error al cargar puestos:', err)
+      next: (data: any[]) => (this.puestos = data || []),
+      error: (err) => console.error('Error al cargar puestos:', err),
     });
 
     // 3. Cargar Delegaciones
     this.apiService.getDelegaciones().subscribe({
-      next: (data: any[]) => this.delegaciones = data,
-      error: (err) => console.error('Error al cargar delegaciones:', err)
+      next: (data: any[]) => (this.delegaciones = data || []),
+      error: (err) => console.error('Error al cargar delegaciones:', err),
     });
 
     // 4. Cargar Festivos
     this.apiService.getFestivos().subscribe({
-      next: (data: any[]) => this.festivos = data,
-      error: (err) => console.error('Error al cargar festivos:', err)
+      next: (data: any[]) => (this.festivos = data || []),
+      error: (err) => console.error('Error al cargar festivos:', err),
     });
 
     // 5. Cargar Solicitudes Pendientes de Vacaciones
     this.apiService.getSolicitudesPendientes().subscribe({
-      next: (data: any[]) => this.solicitudesPendientes = data,
-      error: (err) => console.error('Error al cargar solicitudes pendientes:', err)
+      next: (data: any[]) => (this.solicitudesPendientes = data || []),
+      error: (err) => console.error('Error al cargar solicitudes pendientes:', err),
     });
 
-    // 6. Cargar el Histórico Global de Vacaciones (para pintar en el calendario)
-    // Nota: Si en tu ApiService el método se llama diferente, ajusta esta línea
-    this.apiService.getSolicitudesPendientes().subscribe({ 
+    // 6. Cargar TODAS las solicitudes (Aprobadas, Pendientes, Rechazadas) para la tabla general y el calendario
+    const reqTodas = this.apiService.getTodasSolicitudes
+      ? this.apiService.getTodasSolicitudes()
+      : this.apiService.getMisSolicitudes();
+
+    reqTodas.subscribe({
       next: (data: any[]) => {
-        this.todasLasSolicitudes = data;
+        this.todasLasSolicitudes = data || [];
         this.generarCalendario();
       },
       error: (err) => {
-        console.error('Error al cargar histórico global de vacaciones:', err);
-        this.generarCalendario(); 
-      }
+        console.error('Error al cargar todas las solicitudes:', err);
+        this.generarCalendario();
+      },
     });
   }
 
@@ -102,28 +114,28 @@ export class PanelAdminComponent implements OnInit {
 
     this.apiService.guardarUsuario(this.nuevoUsuario).subscribe({
       next: () => {
-        this.cargarDatos(); // Recarga la lista real de la BD
+        this.cargarDatos();
         this.resetUsuarioForm();
       },
-      error: (err) => alert('Error al guardar el usuario: ' + err.message)
+      error: (err) => alert('Error al guardar el usuario: ' + err.message),
     });
   }
 
-  editarUsuario(u: any): void { 
-    this.nuevoUsuario = { ...u }; 
+  editarUsuario(u: any): void {
+    this.nuevoUsuario = { ...u };
   }
 
-  eliminarUsuario(id: number): void { 
-    if (confirm('¿Seguro que deseas eliminar este usuario de la base de datos?')) {
+  eliminarUsuario(id: number): void {
+    if (confirm('¿Seguro que deseas eliminar este usuario?')) {
       this.apiService.eliminarUsuario(id).subscribe({
         next: () => this.cargarDatos(),
-        error: (err) => alert('Error al eliminar usuario')
+        error: (err) => alert('Error al eliminar usuario'),
       });
     }
   }
 
-  resetUsuarioForm(): void { 
-    this.nuevoUsuario = { id: null, nombre: '', email: '', puesto: '', delegacion: '' }; 
+  resetUsuarioForm(): void {
+    this.nuevoUsuario = { id: null, nombre: '', email: '', puesto: '', delegacion: '' };
   }
 
   // --- CRUD REAL DE PUESTOS ---
@@ -135,19 +147,19 @@ export class PanelAdminComponent implements OnInit {
         this.cargarDatos();
         this.nuevoPuesto = { id: null, nombre: '' };
       },
-      error: (err) => alert('Error al guardar puesto')
+      error: (err) => alert('Error al guardar puesto'),
     });
   }
 
-  editarPuesto(p: any): void { 
-    this.nuevoPuesto = { ...p }; 
+  editarPuesto(p: any): void {
+    this.nuevoPuesto = { ...p };
   }
 
-  eliminarPuesto(id: number): void { 
+  eliminarPuesto(id: number): void {
     if (confirm('¿Deseas eliminar este puesto?')) {
       this.apiService.eliminarPuesto(id).subscribe({
         next: () => this.cargarDatos(),
-        error: (err) => alert('Error al eliminar puesto')
+        error: (err) => alert('Error al eliminar puesto'),
       });
     }
   }
@@ -161,19 +173,19 @@ export class PanelAdminComponent implements OnInit {
         this.cargarDatos();
         this.nuevaDelegacion = { id: null, nombre: '', ciudad: '' };
       },
-      error: (err) => alert('Error al guardar delegación')
+      error: (err) => alert('Error al guardar delegación'),
     });
   }
 
-  editarDelegacion(d: any): void { 
-    this.nuevaDelegacion = { ...d }; 
+  editarDelegacion(d: any): void {
+    this.nuevaDelegacion = { ...d };
   }
 
-  eliminarDelegacion(id: number): void { 
+  eliminarDelegacion(id: number): void {
     if (confirm('¿Deseas eliminar esta delegación?')) {
       this.apiService.eliminarDelegacion(id).subscribe({
         next: () => this.cargarDatos(),
-        error: (err) => alert('Error al eliminar delegación')
+        error: (err) => alert('Error al eliminar delegación'),
       });
     }
   }
@@ -181,27 +193,30 @@ export class PanelAdminComponent implements OnInit {
   // --- CRUD REAL DE FESTIVOS ---
   guardarFestivo(): void {
     if (!this.nuevoFestivo.fecha || !this.nuevoFestivo.descripcion) return;
-    
-    const valorDelegacion = this.nuevoFestivo.delegacionId !== '' ? Number(this.nuevoFestivo.delegacionId) : '';
 
-    this.apiService.guardarFestivo({ ...this.nuevoFestivo, delegacionId: valorDelegacion }).subscribe({
-      next: () => {
-        this.cargarDatos();
-        this.resetFestivoForm();
-      },
-      error: (err) => alert('Error al guardar el día festivo')
-    });
+    const valorDelegacion =
+      this.nuevoFestivo.delegacionId !== '' ? Number(this.nuevoFestivo.delegacionId) : '';
+
+    this.apiService
+      .guardarFestivo({ ...this.nuevoFestivo, delegacionId: valorDelegacion })
+      .subscribe({
+        next: () => {
+          this.cargarDatos();
+          this.resetFestivoForm();
+        },
+        error: (err) => alert('Error al guardar el día festivo'),
+      });
   }
 
-  editarFestivo(f: any): void { 
-    this.nuevoFestivo = { ...f, delegacionId: f.delegacionId ?? '' }; 
+  editarFestivo(f: any): void {
+    this.nuevoFestivo = { ...f, delegacionId: f.delegacionId ?? '' };
   }
 
-  eliminarFestivo(id: number): void { 
+  eliminarFestivo(id: number): void {
     if (confirm('¿Deseas eliminar este festivo?')) {
       this.apiService.eliminarFestivo(id).subscribe({
         next: () => this.cargarDatos(),
-        error: (err) => alert('Error al eliminar festivo')
+        error: (err) => alert('Error al eliminar festivo'),
       });
     }
   }
@@ -220,10 +235,10 @@ export class PanelAdminComponent implements OnInit {
 
     this.apiService.resolverSolicitud(id, accion, motivo).subscribe({
       next: () => {
-        this.cargarDatos(); 
-        delete this.motivosRechazo[id]; 
+        this.cargarDatos();
+        delete this.motivosRechazo[id];
       },
-      error: (err) => alert(err.error?.error || 'Error al procesar la acción en el servidor.')
+      error: (err) => alert(err.error?.error || 'Error al procesar la acción en el servidor.'),
     });
   }
 
@@ -231,11 +246,11 @@ export class PanelAdminComponent implements OnInit {
   generarCalendario(): void {
     const año = this.fechaActual.getFullYear();
     const mes = this.fechaActual.getMonth();
-    const primerDiaSemana = new Date(año, mes, 1).getDay(); 
+    const primerDiaSemana = new Date(año, mes, 1).getDay();
     const totalDias = new Date(año, mes + 1, 0).getDate();
     const inicioVacio = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
     this.diasDelMes = [];
-    
+
     for (let i = 0; i < inicioVacio; i++) this.diasDelMes.push(null);
     for (let dia = 1; dia <= totalDias; dia++) this.diasDelMes.push(dia);
   }
@@ -246,24 +261,28 @@ export class PanelAdminComponent implements OnInit {
     this.generarCalendario();
   }
 
+  /**
+   * Filtra únicamente las solicitudes en estado APROBADO para mostrarlas en el calendario.
+   */
   obtenerEmpleadosDeVacaciones(dia: number | null): string[] {
     if (!dia) return [];
+
     const año = this.fechaActual.getFullYear();
     const mes = this.fechaActual.getMonth();
-    const fechaEvaluada = new Date(año, mes, dia);
+    const fechaEvaluada = new Date(año, mes, dia).getTime();
     const empleadosEncontrados: string[] = [];
 
     for (const solicitud of this.todasLasSolicitudes) {
-      if (solicitud.estado === 'Aprobado') {
-        const inicio = new Date(solicitud.fechaInicio);
-        const fin = new Date(solicitud.fechaFin);
-        inicio.setHours(0,0,0,0);
-        fin.setHours(23,59,59,999);
+      // ⚠️ SOLO MOSTRAR VACACIONES APROBADAS EN EL CALENDARIO
+      if (solicitud.estado === 'Aprobado' && solicitud.fechaInicio && solicitud.fechaFin) {
+        const inicio = new Date(solicitud.fechaInicio + 'T00:00:00').getTime();
+        const fin = new Date(solicitud.fechaFin + 'T23:59:59').getTime();
 
         if (fechaEvaluada >= inicio && fechaEvaluada <= fin) {
-          const identificador = solicitud.usuario?.nombre || `User #${solicitud.usuario?.id || '?'}`;
-          if (!empleadosEncontrados.includes(identificador)) {
-            empleadosEncontrados.push(identificador);
+          const nombreEmpleado =
+            solicitud.usuario?.nombre || `Usuario #${solicitud.usuario?.id || '?'}`;
+          if (!empleadosEncontrados.includes(nombreEmpleado)) {
+            empleadosEncontrados.push(nombreEmpleado);
           }
         }
       }

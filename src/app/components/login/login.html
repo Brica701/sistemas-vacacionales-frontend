@@ -1,19 +1,43 @@
-<div style="max-width: 400px; margin: 80px auto; padding: 30px; background: #f8f9fa; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: sans-serif;">
-  <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Iniciar Sesión</h2>
-  
-  <div style="margin-bottom: 15px;">
-    <label style="display: block; margin-bottom: 5px; color: #666;">Correo Electrónico:</label>
-    <input type="email" [(ngModel)]="email" placeholder="ejemplo@empresa.com" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+<div style="max-width: 420px; margin: 80px auto; padding: 40px 35px; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; border: 1px solid #eaedf1;">
+
+  <!-- Cabecera / Identidad -->
+  <div style="text-align: center; margin-bottom: 30px;">
+    <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #eef2ff; color: #4f46e5; border-radius: 10px; margin-bottom: 12px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    </div>
+    <h2 style="margin: 0; color: #1e293b; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">Acceso al Sistema</h2>
+    <p style="margin: 6px 0 0 0; color: #64748b; font-size: 13px;">Introduce tus credenciales para continuar</p>
   </div>
 
-  <div style="margin-bottom: 20px;">
-    <label style="display: block; margin-bottom: 5px; color: #666;">Contraseña:</label>
-    <input type="password" [(ngModel)]="contrasena" placeholder="********" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+  <form (ngSubmit)="onLogin()">
+    <!-- Campo Email -->
+    <div style="margin-bottom: 18px;">
+      <label style="display: block; margin-bottom: 6px; color: #334155; font-size: 13px; font-weight: 600;">Correo Electrónico</label>
+      <input type="email" [(ngModel)]="email" name="email" placeholder="ejemplo@empresa.com"
+             style="width: 100%; padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; color: #0f172a; outline: none; transition: border-color 0.2s;"
+             onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'">
+    </div>
+
+    <!-- Campo Contraseña -->
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; margin-bottom: 6px; color: #334155; font-size: 13px; font-weight: 600;">Contraseña</label>
+      <input type="password" [(ngModel)]="contrasena" name="contrasena" placeholder="••••••••"
+             style="width: 100%; padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; color: #0f172a; outline: none; transition: border-color 0.2s;"
+             onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'">
+    </div>
+
+    <!-- Botón de Iniciar Sesión -->
+    <button type="submit"
+            style="width: 100%; padding: 12px; background: #4f46e5; color: #ffffff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.2s, transform 0.1s; letter-spacing: 0.3px;"
+            onmouseover="this.style.backgroundColor='#4338ca'" onmouseout="this.style.backgroundColor='#4f46e5'">
+      Iniciar Sesión
+    </button>
+  </form>
+
+  <!-- Alerta de Error -->
+  <div *ngIf="errorMensaje" style="margin-top: 20px; padding: 10px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; color: #dc2626; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>{{ errorMensaje }}</span>
   </div>
 
-  <button (click)="onLogin()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
-    Entrar
-  </button>
-
-  <p *ngIf="errorMensaje" style="color: red; text-align: center; margin-top: 15px; font-weight: bold;">{{ errorMensaje }}</p>
 </div>

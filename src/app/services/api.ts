@@ -3,10 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApiService {
-  private baseUrl = 'http://localhost:8080/api'; 
+  private baseUrl = 'http://localhost:8080/api';
 
   constructor(private http: HttpClient) {}
 
@@ -57,23 +57,45 @@ export class ApiService {
     return this.http.delete<any>(`${this.baseUrl}/festivos/${id}`);
   }
 
-  // --- VACACIONES (CORREGIDO PARA COINCIDIR CON TUS CONTROLADORES JAVA) ---
-  
+  // --- VACACIONES (PANEL DE CONTROL Y EMPLEADO) ---
+
   // Apunta a: http://localhost:8080/api/admin/pendientes
   getSolicitudesPendientes(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/admin/pendientes`);
   }
 
   // Apunta a: http://localhost:8080/api/admin/resolver/{id}
-  resolverSolicitud(id: number, accion: 'Aprobado' | 'Rechazado', motivo?: string): Observable<any> {
+  resolverSolicitud(
+    id: number,
+    accion: 'Aprobado' | 'Rechazado',
+    motivo?: string,
+  ): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/admin/resolver/${id}`, {
-      accion: accion,             // Coincide con payload.get("accion") en Java
-      motivoRechazo: motivo || '' // Coincide con payload.get("motivoRechazo") en Java
+      accion: accion, // Coincide con payload.get("accion") en Java
+      motivoRechazo: motivo || '', // Coincide con payload.get("motivoRechazo") en Java
     });
   }
 
-  // Apunta a: http://localhost:8080/api/empleado/solicitudes (Para usar en el calendario global)
+  // Apunta a: http://localhost:8080/api/empleado/solicitudes (Para mis solicitudes personales)
   getMisSolicitudes(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/empleado/solicitudes`);
+  }
+
+  // NUEVO: Enviar nueva solicitud de vacaciones desde la vista del empleado
+  solicitarVacaciones(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/empleado/solicitar`, payload);
+  }
+
+  // NUEVO: Obtener absolutamente todas las solicitudes aprobadas/globales para ver los compañeros en el calendario
+  getTodasSolicitudes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/vacaciones`);
+  }
+
+  // --- AUTENTICACIÓN (LOGIN REAL CON NEON) ---
+  login(email: string, contrasena: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/auth/login`, {
+      email: email,
+      password: contrasena,
+    });
   }
 }

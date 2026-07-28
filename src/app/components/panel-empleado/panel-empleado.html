@@ -1,62 +1,101 @@
-<div style="max-width: 1100px; margin: 40px auto; font-family: sans-serif; padding: 0 20px;">
-  
-  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 30px;">
-    <h2 style="color: #007bff; margin: 0;">Panel del Empleado</h2>
-    <a href="/login" style="padding: 6px 12px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">Cerrar Sesión</a>
-  </div>
+<div style="max-width: 1400px; margin: 0 auto; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; padding: 24px; color: #1e293b; background-color: #f8fafc; min-height: 100vh;">
 
-  <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 40px;">
-    
-    <div style="flex: 1; min-width: 320px; background: #f8f9fa; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; height: fit-content;">
-      <h3 style="margin-top: 0; color: #333; margin-bottom: 20px;">Solicitar Nuevas Vacaciones</h3>
-      
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 14px;">Fecha de Inicio:</label>
-        <input type="date" [(ngModel)]="fechaInicio" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+  <!-- CABECERA PRINCIPAL -->
+  <header style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 16px 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 40px; height: 40px; background: #eef2ff; color: #4f46e5; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </div>
-
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 14px;">Fecha de Fin:</label>
-        <input type="date" [(ngModel)]="fechaFin" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      <div>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a;">Portal del Empleado</h2>
+        <span style="font-size: 13px; color: #64748b;">Gestión personal de vacaciones y ausencias</span>
       </div>
+    </div>
+    <a href="/login" style="padding: 8px 16px; background: #f1f5f9; color: #475569; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid #cbd5e1; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+      🚪 Cerrar Sesión
+    </a>
+  </header>
 
-      <button (click)="enviarSolicitud()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;">
-        Enviar Solicitud
-      </button>
+  <div style="display: grid; grid-template-columns: minmax(320px, 1fr) minmax(550px, 1.8fr); gap: 24px; margin-bottom: 24px;">
 
-      <p *ngIf="mensajeError" style="color: #dc3545; margin-top: 15px; font-weight: bold; font-size: 14px; text-align: center; margin-bottom: 0;">⚠️ {{ mensajeError }}</p>
+    <!-- FORMULARIO DE SOLICITUD -->
+    <div style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: fit-content;">
+      <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a;">📝 Solicitar Vacaciones</h3>
+
+      <form (ngSubmit)="enviarSolicitud()">
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 6px; color: #475569; font-weight: 600; font-size: 13px;">Fecha de Inicio</label>
+          <input type="date" [(ngModel)]="fechaInicio" name="fechaInicio" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'" required>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 6px; color: #475569; font-weight: 600; font-size: 13px;">Fecha de Fin</label>
+          <input type="date" [(ngModel)]="fechaFin" name="fechaFin" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'" required>
+        </div>
+
+        <button type="submit" style="width: 100%; padding: 11px; background: #4f46e5; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+          Enviar Solicitud
+        </button>
+      </form>
+
+      <!-- ALERTA DE ERROR -->
+      <div *ngIf="mensajeError" style="margin-top: 16px; padding: 10px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; color: #ef4444; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>{{ mensajeError }}</span>
+      </div>
     </div>
 
-    <div style="flex: 1.5; min-width: 380px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <button (click)="cambiarMes(-1)" style="padding: 6px 14px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; user-select: none;">&lt;</button>
-        <h3 style="margin: 0; color: #2d3748; min-width: 160px; text-align: center; font-size: 18px;">
-          {{ nombresMeses[fechaActual.getMonth()] }} {{ fechaActual.getFullYear() }}
-        </h3>
-        <button (click)="cambiarMes(1)" style="padding: 6px 14px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; user-select: none;">&gt;</button>
+    <!-- CALENDARIO CON FILTROS -->
+    <div style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+
+      <!-- CONTROLES DE NAVEGACIÓN DE MES -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">📅 {{ nombresMeses[fechaActual.getMonth()] }} {{ fechaActual.getFullYear() }}</h3>
+        <div style="display: flex; gap: 4px;">
+          <button (click)="cambiarMes(-1)" style="padding: 5px 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: 600; color: #475569;">&lt;</button>
+          <button (click)="cambiarMes(1)" style="padding: 5px 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: 600; color: #475569;">&gt;</button>
+        </div>
       </div>
 
-      <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; font-size: 12px; font-weight: bold;">
-        <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #28a745; display: inline-block; border-radius: 2px;"></span> Aprobado</div>
-        <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #ffc107; display: inline-block; border-radius: 2px;"></span> Pendiente</div>
-        <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #dc3545; display: inline-block; border-radius: 2px;"></span> Rechazado</div>
+      <!-- FILTRO DE VISUALIZACIÓN DE VACACIONES -->
+      <div style="margin-bottom: 16px; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+        <label style="font-size: 12px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px;">
+          <span>👁️</span> Vista del Calendario:
+        </label>
+        <select [(ngModel)]="filtroVista" (change)="aplicarFiltroCalendario()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: white; color: #0f172a; cursor: pointer; outline: none; font-weight: 500;">
+          <option value="mis_vacaciones">👤 Solo mis vacaciones</option>
+          <option value="puesto">💼 Mismo Puesto (Aprobadas)</option>
+          <option value="delegacion">🏢 Misma Delegación (Aprobadas)</option>
+          <option value="todas">🌍 Todas las Sedes (Aprobadas)</option>
+        </select>
       </div>
 
+      <!-- LEYENDA -->
+      <div style="display: flex; gap: 16px; justify-content: flex-start; margin-bottom: 16px; font-size: 11px; font-weight: 600; color: #64748b;">
+        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span> Aprobadas</div>
+        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></span> Pendientes</div>
+        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span> Rechazadas</div>
+      </div>
+
+      <!-- GRID DEL CALENDARIO -->
       <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center;">
-        <div *ngFor="let d of ['Lu','Ma','Mi','Ju','Vi','Sá','Do']" style="font-weight: bold; color: #718096; padding-bottom: 5px; font-size: 13px;">{{d}}</div>
-        
-        <div *ngFor="let dia of diasDelMes" 
-             style="padding: 10px 0; border-radius: 4px; font-size: 14px; font-weight: 500;"
-             [ngStyle]="{
-               'background-color': obtenerEstadoDia(dia) === 'Aprobado' ? '#28a745' : 
-                                   obtenerEstadoDia(dia) === 'Pendiente' ? '#ffc107' : 
-                                   obtenerEstadoDia(dia) === 'Rechazado' ? '#dc3545' : 
-                                   dia ? '#f7fafc' : 'transparent',
-               'color': (obtenerEstadoDia(dia) !== 'libre' && obtenerEstadoDia(dia) !== 'vacio') ? 'white' : '#2d3748',
-               'border': dia ? '1px solid #edf2f7' : 'none'
-             }">
-          {{ dia }}
+        <div *ngFor="let d of ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']" style="font-weight: 700; color: #64748b; padding-bottom: 6px; font-size: 12px;">{{d}}</div>
+
+        <div *ngFor="let dia of diasDelMes"
+             style="min-height: 68px; padding: 6px; border-radius: 6px; text-align: left; display: flex; flex-direction: column; background: #fafafa; border: 1px solid #f1f5f9;">
+
+          <span *ngIf="dia" style="font-size: 11px; font-weight: 700; color: #94a3b8; align-self: flex-end;">{{ dia }}</span>
+
+          <!-- LISTA DE PERSONAS DE VACACIONES EN ESTE DÍA -->
+          <div *ngIf="dia" style="display: flex; flex-direction: column; gap: 3px; width: 100%; margin-top: 2px;">
+            <div *ngFor="let item of obtenerVacacionesDelDia(dia)"
+                 [style.background]="item.esMio ? (item.estado === 'Aprobado' ? '#10b981' : item.estado === 'Rechazado' ? '#ef4444' : '#f59e0b') : '#10b981'"
+                 style="color: white; font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"
+                 [title]="item.nombreEmpleado + ' (' + item.estado + ')'">
+              {{ item.esMio ? 'Yo' : item.nombreEmpleado }}
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -64,42 +103,44 @@
 
   </div>
 
-  <div>
-    <h3 style="color: #333; margin-bottom: 15px;">Historial Detallado de Solicitudes</h3>
-    
-    <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+  <!-- TABLA HISTORIAL DE SOLICITUDES DEL EMPLEADO -->
+  <div style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a;">📋 Histórico de Mis Solicitudes</h3>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
       <thead>
-        <tr style="background: #007bff; color: white; text-align: left;">
-          <th style="padding: 12px; border: 1px solid #dee2e6;">ID</th>
-          <th style="padding: 12px; border: 1px solid #dee2e6;">Periodo</th>
-          <th style="padding: 12px; border: 1px solid #dee2e6;">Días Hábiles</th>
-          <th style="padding: 12px; border: 1px solid #dee2e6;">Estado</th>
-          <th style="padding: 12px; border: 1px solid #dee2e6;">Observaciones / Motivo</th>
-        </tr>
+      <tr style="border-bottom: 2px solid #f1f5f9; color: #64748b;">
+        <th style="padding: 10px;">ID</th>
+        <th style="padding: 10px;">Periodo</th>
+        <th style="padding: 10px;">Días Hábiles</th>
+        <th style="padding: 10px;">Estado</th>
+        <th style="padding: 10px;">Observaciones / Motivo</th>
+      </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let s of misSolicitudes">
-          <td style="padding: 12px; border: 1px solid #dee2e6; color: #666;">#{{ s.id }}</td>
-          <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: 500;">{{ s.fechaInicio }} al {{ s.fechaFin }}</td>
-          <td style="padding: 12px; border: 1px solid #dee2e6;">{{ s.diasSolicitados }} días</td>
-          <td style="padding: 12px; border: 1px solid #dee2e6;">
+      <tr *ngFor="let s of misSolicitudes" style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px 10px; color: #94a3b8; font-weight: 600;">#{{ s.id }}</td>
+        <td style="padding: 12px 10px; font-weight: 600; color: #1e293b;">{{ s.fechaInicio }} <span style="color:#94a3b8; font-weight: 400;">al</span> {{ s.fechaFin }}</td>
+        <td style="padding: 12px 10px; font-weight: 600; color: #475569;">{{ s.diasSolicitados || '-' }} días</td>
+        <td style="padding: 12px 10px;">
             <span [ngStyle]="{
-              'padding': '4px 8px', 'border-radius': '4px', 'font-size': '12px', 'font-weight': 'bold', 'color': 'white',
-              'background-color': s.estado === 'Aprobado' ? '#28a745' : s.estado === 'Rechazado' ? '#dc3545' : '#ffc107'
+              'padding': '3px 10px', 'border-radius': '12px', 'font-size': '12px', 'font-weight': '600',
+              'color': s.estado === 'Aprobado' ? '#15803d' : s.estado === 'Rechazado' ? '#b91c1c' : '#b45309',
+              'background-color': s.estado === 'Aprobado' ? '#dcfce7' : s.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7'
             }">
-              {{ s.estado || 'Pendiente' }}
+              ● {{ s.estado || 'Pendiente' }}
             </span>
-          </td>
-          <td style="padding: 12px; border: 1px solid #dee2e6; color: #666; font-style: italic;">
-            {{ s.motivoRechazo || '-' }}
-          </td>
-        </tr>
-        
-        <tr *ngIf="misSolicitudes.length === 0">
-          <td colspan="5" style="padding: 30px; text-align: center; color: #999; font-style: italic;">
-            Aún no has solicitado ningún periodo de vacaciones.
-          </td>
-        </tr>
+        </td>
+        <td style="padding: 12px 10px; color: #64748b; font-style: italic;">
+          {{ s.motivoRechazo || '-' }}
+        </td>
+      </tr>
+
+      <tr *ngIf="misSolicitudes.length === 0">
+        <td colspan="5" style="padding: 24px; text-align: center; color: #94a3b8;">
+          Aún no has solicitado ningún periodo de vacaciones.
+        </td>
+      </tr>
       </tbody>
     </table>
   </div>

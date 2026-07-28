@@ -1,160 +1,302 @@
-<div style="max-width: 1300px; margin: 30px auto; font-family: sans-serif; padding: 0 20px;">
-  
-  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #dc3545; padding-bottom: 10px; margin-bottom: 20px;">
-    <h2 style="color: #dc3545; margin: 0;">Panel de Control (Administrador)</h2>
-    <a href="/login" style="padding: 6px 12px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">Cerrar Sesión</a>
-  </div>
+<div style="max-width: 1400px; margin: 0 auto; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; padding: 24px; color: #1e293b; background-color: #f8fafc; min-height: 100vh;">
 
-  <div style="display: flex; gap: 5px; margin-bottom: 25px; background: #212529; padding: 6px; border-radius: 6px;">
-    <button (click)="cambiarPestana('vacaciones')" [style.background]="pestanaActiva === 'vacaciones' ? '#dc3545' : 'transparent'" style="color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;">📅 Vacaciones y Calendario</button>
-    <button (click)="cambiarPestana('usuarios')" [style.background]="pestanaActiva === 'usuarios' ? '#dc3545' : 'transparent'" style="color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;">👤 Gestión Usuarios</button>
-    <button (click)="cambiarPestana('puestos')" [style.background]="pestanaActiva === 'puestos' ? '#dc3545' : 'transparent'" style="color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;">💼 Puestos</button>
-    <button (click)="cambiarPestana('delegaciones')" [style.background]="pestanaActiva === 'delegaciones' ? '#dc3545' : 'transparent'" style="color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;">🏢 Delegaciones</button>
-    <button (click)="cambiarPestana('festivos')" [style.background]="pestanaActiva === 'festivos' ? '#dc3545' : 'transparent'" style="color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;">🎉 Festivos</button>
-  </div>
+  <!-- CABECERA PRINCIPAL -->
+  <header style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 16px 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 40px; height: 40px; background: #eef2ff; color: #4f46e5; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a;">Panel de Administración</h2>
+        <span style="font-size: 13px; color: #64748b;">Gestión global de personal y solicitudes</span>
+      </div>
+    </div>
+    <a href="/login" style="padding: 8px 16px; background: #f1f5f9; color: #475569; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid #cbd5e1; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+      🚪 Cerrar Sesión
+    </a>
+  </header>
 
-  <div *ngIf="pestanaActiva === 'vacaciones'" style="display: flex; gap: 30px; flex-wrap: wrap;">
-    <div style="flex: 1.2; min-width: 450px;">
-      <h3>Solicitudes Pendientes de Validación</h3>
-      <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-        <thead>
-          <tr style="background: #212529; color: white; text-align: left;"><th style="padding: 10px; border: 1px solid #dee2e6;">Empleado</th><th style="padding: 10px; border: 1px solid #dee2e6;">Fechas</th><th style="padding: 10px; border: 1px solid #dee2e6;">Días</th><th style="padding: 10px; border: 1px solid #dee2e6;">Acción</th></tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let s of solicitudesPendientes">
-            <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Usuario #{{ s.usuario?.id || '?' }}</td>
-            <td style="padding: 10px; border: 1px solid #dee2e6; font-size: 13px;">{{ s.fechaInicio }} <br>al {{ s.fechaFin }}</td>
-            <td style="padding: 10px; border: 1px solid #dee2e6;">{{ s.diasSolicitados }} d.</td>
-            <td style="padding: 10px; border: 1px solid #dee2e6;">
-              <div style="display: flex; flex-direction: column; gap: 5px;">
-                <button (click)="resolver(s.id!, 'Aprobado')" style="padding: 5px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">✔️ Aprobar</button>
-                <div style="display: flex; gap: 3px;">
-                  <input type="text" [(ngModel)]="motivosRechazo[s.id!]" placeholder="Motivo..." style="padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; width: 80px;">
-                  <button (click)="resolver(s.id!, 'Rechazado')" style="padding: 5px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">❌</button>
+  <!-- NAVEGACIÓN POR PESTAÑAS -->
+  <nav style="display: flex; gap: 8px; margin-bottom: 24px; background: #ffffff; padding: 6px; border-radius: 10px; border: 1px solid #e2e8f0; width: fit-content; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+    <button (click)="cambiarPestana('vacaciones')" [style.background]="pestanaActiva === 'vacaciones' ? '#4f46e5' : 'transparent'" [style.color]="pestanaActiva === 'vacaciones' ? '#ffffff' : '#64748b'" style="border: none; padding: 9px 16px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">📅 Vacaciones & Calendario</button>
+    <button (click)="cambiarPestana('usuarios')" [style.background]="pestanaActiva === 'usuarios' ? '#4f46e5' : 'transparent'" [style.color]="pestanaActiva === 'usuarios' ? '#ffffff' : '#64748b'" style="border: none; padding: 9px 16px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">👥 Usuarios</button>
+    <button (click)="cambiarPestana('puestos')" [style.background]="pestanaActiva === 'puestos' ? '#4f46e5' : 'transparent'" [style.color]="pestanaActiva === 'puestos' ? '#ffffff' : '#64748b'" style="border: none; padding: 9px 16px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">💼 Puestos</button>
+    <button (click)="cambiarPestana('delegaciones')" [style.background]="pestanaActiva === 'delegaciones' ? '#4f46e5' : 'transparent'" [style.color]="pestanaActiva === 'delegaciones' ? '#ffffff' : '#64748b'" style="border: none; padding: 9px 16px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">🏢 Delegaciones</button>
+    <button (click)="cambiarPestana('festivos')" [style.background]="pestanaActiva === 'festivos' ? '#4f46e5' : 'transparent'" [style.color]="pestanaActiva === 'festivos' ? '#ffffff' : '#64748b'" style="border: none; padding: 9px 16px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">🎉 Festivos</button>
+  </nav>
+
+  <!-- PESTAÑA 1: VACACIONES Y CALENDARIO -->
+  <div *ngIf="pestanaActiva === 'vacaciones'" style="display: flex; flex-direction: column; gap: 24px;">
+
+    <div style="display: grid; grid-template-columns: minmax(400px, 1fr) minmax(550px, 1.5fr); gap: 24px;">
+
+      <!-- TABLA: SOLICITUDES PENDIENTES -->
+      <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: fit-content;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">⏳ Revisiones Pendientes</h3>
+          <span style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 700;">{{ solicitudesPendientes.length }} pendientes</span>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+          <thead>
+          <tr style="border-bottom: 2px solid #f1f5f9; color: #64748b;">
+            <th style="padding: 10px 8px; font-weight: 600;">Empleado</th>
+            <th style="padding: 10px 8px; font-weight: 600;">Periodo</th>
+            <th style="padding: 10px 8px; font-weight: 600;">Días</th>
+            <th style="padding: 10px 8px; font-weight: 600; text-align: right;">Resolución</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let s of solicitudesPendientes" style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px 8px; font-weight: 600; color: #1e293b;">
+              {{ s.usuario?.nombre || 'Usuario #' + (s.usuario?.id || '?') }}
+            </td>
+            <td style="padding: 12px 8px; color: #475569; white-space: nowrap;">
+              {{ s.fechaInicio }}<br><span style="color: #94a3b8; font-size: 11px;">al {{ s.fechaFin }}</span>
+            </td>
+            <td style="padding: 12px 8px; font-weight: 600; color: #475569;">{{ s.diasSolicitados || '-' }}d</td>
+            <td style="padding: 12px 8px; text-align: right;">
+              <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+                <button (click)="resolver(s.id!, 'Aprobado')" style="padding: 5px 10px; background: #10b981; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; width: 100%; transition: background 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">Aprobar</button>
+                <div style="display: flex; gap: 4px; width: 100%;">
+                  <input type="text" [(ngModel)]="motivosRechazo[s.id!]" placeholder="Motivo..." style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11px; width: 100%; box-sizing: border-box; outline: none;">
+                  <button (click)="resolver(s.id!, 'Rechazado')" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; transition: background 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">❌</button>
                 </div>
               </div>
             </td>
           </tr>
-          <tr *ngIf="solicitudesPendientes.length === 0"><td colspan="4" style="padding: 30px; text-align: center; color: #888; font-style: italic;">¡Al día! No hay revisiones pendientes.</td></tr>
-        </tbody>
-      </table>
-    </div>
-    
-    <div style="flex: 2; min-width: 550px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <button (click)="cambiarMes(-1)" style="padding: 6px 14px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer;">&lt;</button>
-        <h3 style="margin: 0; color: #2d3748;">📅 {{ nombresMeses[fechaActual.getMonth()] }} {{ fechaActual.getFullYear() }}</h3>
-        <button (click)="cambiarMes(1)" style="padding: 6px 14px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer;">&gt;</button>
+          <tr *ngIf="solicitudesPendientes.length === 0">
+            <td colspan="4" style="padding: 30px; text-align: center; color: #94a3b8;">
+              <div style="font-size: 24px; margin-bottom: 4px;">🎉</div>
+              ¡Todo al día! No hay solicitudes pendientes.
+            </td>
+          </tr>
+          </tbody>
+        </table>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center;">
-        <div *ngFor="let d of ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']" style="font-weight: bold; color: #4a5568; font-size: 13px;">{{d}}</div>
-        <div *ngFor="let dia of diasDelMes" style="min-height: 65px; padding: 4px; border-radius: 4px; border: 1px solid #edf2f7; text-align: left; display: flex; flex-direction: column; background: #f7fafc;">
-          <span *ngIf="dia" style="font-size: 11px; font-weight: bold; color: #a0aec0; align-self: flex-end;">{{ dia }}</span>
-          <div *ngIf="dia" style="display: flex; flex-direction: column; gap: 2px; width: 100%; margin-top: 4px;">
-            <div *ngFor="let p of obtenerEmpleadosDeVacaciones(dia)" style="background: #28a745; color: white; font-size: 9px; font-weight: bold; padding: 2px; border-radius: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">👤 {{ p }}</div>
+
+      <!-- CALENDARIO GLOBAL -->
+      <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">📅 {{ nombresMeses[fechaActual.getMonth()] }} {{ fechaActual.getFullYear() }}</h3>
+          <div style="display: flex; gap: 4px;">
+            <button (click)="cambiarMes(-1)" style="padding: 5px 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: 600; color: #475569;">&lt;</button>
+            <button (click)="cambiarMes(1)" style="padding: 5px 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: 600; color: #475569;">&gt;</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center;">
+          <div *ngFor="let d of ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']" style="font-weight: 700; color: #64748b; font-size: 12px; padding-bottom: 6px;">{{d}}</div>
+          <div *ngFor="let dia of diasDelMes" style="min-height: 68px; padding: 6px; border-radius: 6px; border: 1px solid #f1f5f9; text-align: left; display: flex; flex-direction: column; background: #fafafa;">
+            <span *ngIf="dia" style="font-size: 11px; font-weight: 700; color: #94a3b8; align-self: flex-end;">{{ dia }}</span>
+            <div *ngIf="dia" style="display: flex; flex-direction: column; gap: 3px; width: 100%; margin-top: 2px;">
+              <div *ngFor="let p of obtenerEmpleadosDeVacaciones(dia)" style="background: #10b981; color: white; font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" [title]="p">
+                {{ p }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
     </div>
+
+    <!-- TABLA GENERAL: HISTORIAL -->
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a;">📋 Histórico Completo de Solicitudes</h3>
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <thead>
+        <tr style="border-bottom: 2px solid #f1f5f9; color: #64748b;">
+          <th style="padding: 10px; font-weight: 600;">ID</th>
+          <th style="padding: 10px; font-weight: 600;">Empleado</th>
+          <th style="padding: 10px; font-weight: 600;">Fechas</th>
+          <th style="padding: 10px; font-weight: 600;">Días Hábiles</th>
+          <th style="padding: 10px; font-weight: 600;">Estado</th>
+          <th style="padding: 10px; font-weight: 600;">Observaciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let s of todasLasSolicitudes" style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 10px; color: #94a3b8; font-weight: 600;">#{{ s.id }}</td>
+          <td style="padding: 12px 10px; font-weight: 600; color: #1e293b;">
+            {{ s.usuario?.nombre || 'Usuario #' + (s.usuario?.id || '?') }}
+          </td>
+          <td style="padding: 12px 10px; color: #475569;">{{ s.fechaInicio }} <span style="color:#94a3b8;">al</span> {{ s.fechaFin }}</td>
+          <td style="padding: 12px 10px; font-weight: 600; color: #475569;">{{ s.diasSolicitados || '-' }} días</td>
+          <td style="padding: 12px 10px;">
+              <span [ngStyle]="{
+                'padding': '3px 10px', 'border-radius': '12px', 'font-size': '12px', 'font-weight': '600',
+                'color': s.estado === 'Aprobado' ? '#15803d' : s.estado === 'Rechazado' ? '#b91c1c' : '#b45309',
+                'background-color': s.estado === 'Aprobado' ? '#dcfce7' : s.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7'
+              }">
+                ● {{ s.estado || 'Pendiente' }}
+              </span>
+          </td>
+          <td style="padding: 12px 10px; color: #64748b; font-style: italic;">{{ s.motivoRechazo || '-' }}</td>
+        </tr>
+        <tr *ngIf="todasLasSolicitudes.length === 0">
+          <td colspan="6" style="padding: 24px; text-align: center; color: #94a3b8;">No existen registros de solicitudes.</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 
-  <div *ngIf="pestanaActiva === 'usuarios'" style="display: flex; gap: 20px; flex-wrap: wrap;">
-    <div style="flex: 1; min-width: 300px; background: #f8f9fa; padding: 20px; border-radius: 6px; border: 1px solid #dee2e6; height: fit-content;">
-      <h4>{{ nuevoUsuario.id ? 'Editar' : 'Añadir' }} Usuario</h4>
-      <input type="text" [(ngModel)]="nuevoUsuario.nombre" placeholder="Nombre completo" style="width:100%; padding: 8px; margin-bottom: 10px; border-radius:4px; border:1px solid #ccc;">
-      <input type="email" [(ngModel)]="nuevoUsuario.email" placeholder="Correo electrónico" style="width:100%; padding: 8px; margin-bottom: 10px; border-radius:4px; border:1px solid #ccc;">
-      <input type="text" [(ngModel)]="nuevoUsuario.puesto" placeholder="Puesto" style="width:100%; padding: 8px; margin-bottom: 10px; border-radius:4px; border:1px solid #ccc;">
-      <input type="text" [(ngModel)]="nuevoUsuario.delegacion" placeholder="Delegación" style="width:100%; padding: 8px; margin-bottom: 15px; border-radius:4px; border:1px solid #ccc;">
-      <button (click)="guardarUsuario()" style="background:#28a745; color:white; border:none; padding:10px 15px; border-radius:4px; cursor:pointer; width:100%;">💾 Guardar Usuario</button>
+  <!-- PESTAÑA 2: USUARIOS -->
+  <div *ngIf="pestanaActiva === 'usuarios'" style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
+
+    <!-- Formulario Usuario -->
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <h4 style="margin: 0 0 16px 0; font-size: 15px; color: #0f172a;">{{ nuevoUsuario.id ? '✏️ Editar' : '➕ Crear' }} Usuario</h4>
+
+      <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Nombre completo</label>
+      <input type="text" [(ngModel)]="nuevoUsuario.nombre" placeholder="Ej: Juan Pérez" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
+
+      <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Correo electrónico</label>
+      <input type="email" [(ngModel)]="nuevoUsuario.email" placeholder="juan@empresa.com" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
+
+      <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Puesto Laboral</label>
+      <select [(ngModel)]="nuevoUsuario.puesto" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; box-sizing: border-box; font-size: 13px; outline: none;">
+        <option [ngValue]="null">-- Seleccionar Puesto --</option>
+        <option *ngFor="let p of puestos" [ngValue]="p">{{ p.nombre }}</option>
+      </select>
+
+      <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Delegación / Sede</label>
+      <select [(ngModel)]="nuevoUsuario.delegacion" style="width:100%; padding: 9px 12px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; box-sizing: border-box; font-size: 13px; outline: none;">
+        <option [ngValue]="null">-- Seleccionar Delegación --</option>
+        <option *ngFor="let d of delegaciones" [ngValue]="d">{{ d.nombre }} ({{ d.ciudad }})</option>
+      </select>
+
+      <button (click)="guardarUsuario()" style="background: #4f46e5; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">Guardar Usuario</button>
     </div>
-    <div style="flex: 2; min-width: 450px;">
-      <table style="width:100%; border-collapse:collapse; background:white;">
-        <thead><tr style="background:#343a40; color:white;"><th style="padding:10px;">Nombre</th><th style="padding:10px;">Email</th><th style="padding:10px;">Puesto</th><th style="padding:10px;">Delegación</th><th style="padding:10px;">Acciones</th></tr></thead>
+
+    <!-- Tabla Usuarios -->
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+        <tr style="border-bottom: 2px solid #f1f5f9; color: #64748b; text-align: left;">
+          <th style="padding: 10px;">Nombre</th>
+          <th style="padding: 10px;">Email</th>
+          <th style="padding: 10px;">Puesto</th>
+          <th style="padding: 10px;">Delegación</th>
+          <th style="padding: 10px; text-align: right;">Acciones</th>
+        </tr>
+        </thead>
         <tbody>
-          <tr *ngFor="let u of usuarios" style="border-bottom:1px solid #dee2e6;">
-            <td style="padding:10px;">{{u.nombre}}</td><td style="padding:10px;">{{u.email}}</td><td style="padding:10px;">{{u.puesto}}</td><td style="padding:10px;">{{u.delegacion}}</td>
-            <td style="padding:10px; display:flex; gap:5px;"><button (click)="editarUsuario(u)" style="background:#ffc107; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">✏️</button><button (click)="eliminarUsuario(u.id)" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">🗑️</button></td>
-          </tr>
+        <tr *ngFor="let u of usuarios" style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 10px; font-weight: 600; color: #1e293b;">{{ u.nombre }}</td>
+          <td style="padding: 12px 10px; color: #64748b;">{{ u.email }}</td>
+          <td style="padding: 12px 10px;">
+            <span *ngIf="u.puesto" style="padding: 3px 8px; background: #f1f5f9; border-radius: 4px; font-size: 12px; color: #475569; font-weight: 500;">💼 {{ u.puesto?.nombre || u.puesto }}</span>
+          </td>
+          <td style="padding: 12px 10px;">
+            <span *ngIf="u.delegacion" style="padding: 3px 8px; background: #eef2ff; border-radius: 4px; font-size: 12px; color: #4f46e5; font-weight: 500;">🏢 {{ u.delegacion?.nombre || u.delegacion }}</span>
+          </td>
+          <td style="padding: 12px 10px; text-align: right;">
+            <button (click)="editarUsuario(u)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">✏️</button>
+            <button (click)="eliminarUsuario(u.id)" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; padding: 5px 8px; border-radius: 4px; cursor: pointer;">🗑️</button>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- PESTAÑA 3: PUESTOS -->
+  <div *ngIf="pestanaActiva === 'puestos'" style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <h4 style="margin: 0 0 16px 0; font-size: 15px; color: #0f172a;">{{ nuevoPuesto.id ? '✏️ Editar' : '➕ Crear' }} Puesto</h4>
+      <input type="text" [(ngModel)]="nuevoPuesto.nombre" placeholder="Ej: Desarrollador Senior" style="width:100%; padding: 9px 12px; margin-bottom: 16px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
+      <button (click)="guardarPuesto()" style="background: #4f46e5; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; font-size: 13px;">Guardar Puesto</button>
+    </div>
+
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead><tr style="border-bottom: 2px solid #f1f5f9; color: #64748b; text-align: left;"><th style="padding:10px;">ID</th><th style="padding:10px;">Nombre del Puesto</th><th style="padding:10px; text-align: right;">Acciones</th></tr></thead>
+        <tbody>
+        <tr *ngFor="let p of puestos" style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding:12px 10px; color:#94a3b8; font-weight:600;">#{{p.id}}</td>
+          <td style="padding:12px 10px; font-weight:600; color:#1e293b;">{{p.nombre}}</td>
+          <td style="padding:12px 10px; text-align: right;">
+            <button (click)="editarPuesto(p)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">✏️</button>
+            <button (click)="eliminarPuesto(p.id)" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; padding: 5px 8px; border-radius: 4px; cursor: pointer;">🗑️</button>
+          </td>
+        </tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <div *ngIf="pestanaActiva === 'puestos'" style="display: flex; gap: 20px;">
-    <div style="background:#f8f9fa; padding:20px; border-radius:6px; border:1px solid #dee2e6; width:300px; height:fit-content;">
-      <h4>{{ nuevoPuesto.id ? 'Editar' : 'Añadir' }} Puesto</h4>
-      <input type="text" [(ngModel)]="nuevoPuesto.nombre" placeholder="Nombre del puesto" style="width:100%; padding:8px; margin-bottom:15px; border-radius:4px; border:1px solid #ccc;">
-      <button (click)="guardarPuesto()" style="background:#28a745; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; width:100%;">💾 Guardar</button>
+  <!-- PESTAÑA 4: DELEGACIONES -->
+  <div *ngIf="pestanaActiva === 'delegaciones'" style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <h4 style="margin: 0 0 16px 0; font-size: 15px; color: #0f172a;">{{ nuevaDelegacion.id ? '✏️ Editar' : '➕ Crear' }} Delegación</h4>
+      <input type="text" [(ngModel)]="nuevaDelegacion.nombre" placeholder="Nombre (Ej: Sede Central)" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
+      <input type="text" [(ngModel)]="nuevaDelegacion.ciudad" placeholder="Ciudad" style="width:100%; padding: 9px 12px; margin-bottom: 16px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
+      <button (click)="guardarDelegacion()" style="background: #4f46e5; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; font-size: 13px;">Guardar Sede</button>
     </div>
-    <div style="flex:1;">
-      <table style="width:100%; border-collapse:collapse; background:white;">
-        <thead><tr style="background:#343a40; color:white;"><th style="padding:10px; text-align:left;">ID</th><th style="padding:10px; text-align:left;">Puesto Laboral</th><th style="padding:10px; text-align:left;">Acciones</th></tr></thead>
+
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead><tr style="border-bottom: 2px solid #f1f5f9; color: #64748b; text-align: left;"><th style="padding:10px;">Sede</th><th style="padding:10px;">Ciudad</th><th style="padding:10px; text-align: right;">Acciones</th></tr></thead>
         <tbody>
-          <tr *ngFor="let p of puestos" style="border-bottom:1px solid #dee2e6;"><td style="padding:10px;">#{{p.id}}</td><td style="padding:10px; font-weight:bold;">{{p.nombre}}</td><td style="padding:10px;"><button (click)="editarPuesto(p)" style="background:#ffc107; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; margin-right:5px;">✏️</button><button (click)="eliminarPuesto(p.id)" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">🗑️</button></td></tr>
+        <tr *ngFor="let d of delegaciones" style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding:12px 10px; font-weight:600; color:#1e293b;">🏢 {{d.nombre}}</td>
+          <td style="padding:12px 10px; color:#64748b;">{{d.ciudad}}</td>
+          <td style="padding:12px 10px; text-align: right;">
+            <button (click)="editarDelegacion(d)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">✏️</button>
+            <button (click)="eliminarDelegacion(d.id)" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; padding: 5px 8px; border-radius: 4px; cursor: pointer;">🗑️</button>
+          </td>
+        </tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <div *ngIf="pestanaActiva === 'delegaciones'" style="display: flex; gap: 20px;">
-    <div style="background:#f8f9fa; padding:20px; border-radius:6px; border:1px solid #dee2e6; width:300px; height:fit-content;">
-      <h4>{{ nuevaDelegacion.id ? 'Editar' : 'Añadir' }} Delegación</h4>
-      <input type="text" [(ngModel)]="nuevaDelegacion.nombre" placeholder="Nombre (ej: Sede Norte)" style="width:100%; padding:8px; margin-bottom:10px; border-radius:4px; border:1px solid #ccc;">
-      <input type="text" [(ngModel)]="nuevaDelegacion.ciudad" placeholder="Ciudad" style="width:100%; padding:8px; margin-bottom:15px; border-radius:4px; border:1px solid #ccc;">
-      <button (click)="guardarDelegacion()" style="background:#28a745; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; width:100%;">💾 Guardar</button>
-    </div>
-    <div style="flex:1;">
-      <table style="width:100%; border-collapse:collapse; background:white;">
-        <thead><tr style="background:#343a40; color:white;"><th style="padding:10px; text-align:left;">Delegación</th><th style="padding:10px; text-align:left;">Ciudad</th><th style="padding:10px; text-align:left;">Acciones</th></tr></thead>
-        <tbody>
-          <tr *ngFor="let d of delegaciones" style="border-bottom:1px solid #dee2e6;"><td style="padding:10px; font-weight:bold;">{{d.nombre}}</td><td style="padding:10px;">{{d.ciudad}}</td><td style="padding:10px;"><button (click)="editarDelegacion(d)" style="background:#ffc107; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; margin-right:5px;">✏️</button><button (click)="eliminarDelegacion(d.id)" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">🗑️</button></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <!-- PESTAÑA 5: FESTIVOS -->
+  <div *ngIf="pestanaActiva === 'festivos'" style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <h4 style="margin: 0 0 16px 0; font-size: 15px; color: #0f172a;">{{ nuevoFestivo.id ? '✏️ Editar' : '➕ Crear' }} Festivo</h4>
 
-  <div *ngIf="pestanaActiva === 'festivos'" style="display: flex; gap: 20px;">
-    <div style="background:#f8f9fa; padding:20px; border-radius:6px; border:1px solid #dee2e6; width:300px; height:fit-content;">
-      <h4>{{ nuevoFestivo.id ? 'Editar' : 'Añadir' }} Día Festivo</h4>
-      
-      <label style="font-size: 13px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 4px;">Fecha:</label>
-      <input type="date" [(ngModel)]="nuevoFestivo.fecha" style="width:100%; padding:8px; margin-bottom:12px; border-radius:4px; border:1px solid #ccc; box-sizing: border-box;">
-      
-      <label style="font-size: 13px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 4px;">Descripción:</label>
-      <input type="text" [(ngModel)]="nuevoFestivo.descripcion" placeholder="Descripción (ej: Fiesta Nacional)" style="width:100%; padding:8px; margin-bottom:12px; border-radius:4px; border:1px solid #ccc; box-sizing: border-box;">
-      
-      <label style="font-size: 13px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 4px;">Ámbito / Sede:</label>
-      <select [(ngModel)]="nuevoFestivo.delegacionId" style="width:100%; padding:8px; margin-bottom:18px; border-radius:4px; border:1px solid #ccc; background: white; box-sizing: border-box;">
+      <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Fecha</label>
+      <input type="date" [(ngModel)]="nuevoFestivo.fecha" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
+
+      <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Descripción</label>
+      <input type="text" [(ngModel)]="nuevoFestivo.descripcion" placeholder="Ej: Festivo Nacional" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
+
+      <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Ámbito de aplicación</label>
+      <select [(ngModel)]="nuevoFestivo.delegacionId" style="width:100%; padding: 9px 12px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; box-sizing: border-box; font-size: 13px; outline: none;">
         <option value="">🌍 General (Todas las sedes)</option>
         <option *ngFor="let del of delegaciones" [value]="del.id">🏢 Solo {{ del.nombre }}</option>
       </select>
 
-      <button (click)="guardarFestivo()" style="background:#28a745; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; width:100%; font-weight: bold;">💾 Guardar Festivo</button>
+      <button (click)="guardarFestivo()" style="background: #4f46e5; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; font-size: 13px;">Guardar Festivo</button>
     </div>
-    
-    <div style="flex:1;">
-      <table style="width:100%; border-collapse:collapse; background:white;">
+
+    <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
         <thead>
-          <tr style="background:#343a40; color:white;">
-            <th style="padding:10px; text-align:left;">Fecha</th>
-            <th style="padding:10px; text-align:left;">Motivo / Celebración</th>
-            <th style="padding:10px; text-align:left;">Ámbito</th>
-            <th style="padding:10px; text-align:left;">Acciones</th>
-          </tr>
+        <tr style="border-bottom: 2px solid #f1f5f9; color: #64748b; text-align: left;">
+          <th style="padding:10px;">Fecha</th>
+          <th style="padding:10px;">Celebración / Motivo</th>
+          <th style="padding:10px;">Ámbito</th>
+          <th style="padding:10px; text-align: right;">Acciones</th>
+        </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let f of festivos" style="border-bottom:1px solid #dee2e6;">
-            <td style="padding:10px; font-weight:bold; color:#dc3545;">{{f.fecha}}</td>
-            <td style="padding:10px;">{{f.descripcion}}</td>
-            <td style="padding:10px;">
-              <span *ngIf="f.delegacionId === ''" style="padding: 3px 6px; background: #e2e8f0; color: #4a5568; border-radius: 4px; font-size: 11px; font-weight: bold;">🌍 General</span>
-              <span *ngIf="f.delegacionId !== ''" style="padding: 3px 6px; background: #fffaf0; color: #dd6b20; border: 1px solid #fbd38d; border-radius: 4px; font-size: 11px; font-weight: bold;">🏢 Sede Local</span>
-            </td>
-            <td style="padding:10px;">
-              <button (click)="editarFestivo(f)" style="background:#ffc107; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; margin-right:5px;">✏️</button>
-              <button (click)="eliminarFestivo(f.id)" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">🗑️</button>
-            </td>
-          </tr>
+        <tr *ngFor="let f of festivos" style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding:12px 10px; font-weight:700; color:#ef4444;">{{f.fecha}}</td>
+          <td style="padding:12px 10px; font-weight:600; color:#1e293b;">{{f.descripcion}}</td>
+          <td style="padding:12px 10px;">
+            <span *ngIf="f.delegacionId === '' || f.delegacionId === null" style="padding: 3px 8px; background: #f1f5f9; color: #475569; border-radius: 12px; font-size: 11px; font-weight: 600;">🌍 General</span>
+            <span *ngIf="f.delegacionId !== '' && f.delegacionId !== null" style="padding: 3px 8px; background: #fff7ed; color: #c2410c; border-radius: 12px; font-size: 11px; font-weight: 600;">🏢 Sede Específica</span>
+          </td>
+          <td style="padding:12px 10px; text-align: right;">
+            <button (click)="editarFestivo(f)" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">✏️</button>
+            <button (click)="eliminarFestivo(f.id)" style="background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; padding: 5px 8px; border-radius: 4px; cursor: pointer;">🗑️</button>
+          </td>
+        </tr>
         </tbody>
       </table>
     </div>
