@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api';
@@ -20,7 +20,14 @@ export class PanelAdminComponent implements OnInit {
   todasLasSolicitudes: any[] = []; // Contiene Aprobadas, Rechazadas y Pendientes
 
   // --- MODELOS PARA FORMULARIOS ---
-  nuevoUsuario: any = { id: null, nombre: '', email: '', puesto: '', delegacion: '' };
+  nuevoUsuario: any = {
+    id: null,
+    nombre: '',
+    email: '',
+    password: '',
+    puesto: null,
+    delegacion: null,
+  };
   nuevoPuesto: any = { id: null, nombre: '' };
   nuevaDelegacion: any = { id: null, nombre: '', ciudad: '' };
   nuevoFestivo: any = { id: null, fecha: '', descripcion: '', delegacionId: '' };
@@ -49,10 +56,20 @@ export class PanelAdminComponent implements OnInit {
   // --- CONTROL DE PESTAÑAS ---
   pestanaActiva: string = 'vacaciones'; // 'vacaciones' | 'usuarios' | 'puestos' | 'delegaciones' | 'festivos'
 
-  constructor(private apiService: ApiService) {}
+  constructor(
+    private apiService: ApiService,
+    private cdr: ChangeDetectorRef, // 👈 Inyectado para solucionar NG0100
+  ) {}
 
   ngOnInit(): void {
     this.cargarDatos();
+  }
+
+  // --- COMPARADOR PARA SELECTS EN ANGULAR ---
+  compareFn(item1: any, item2: any): boolean {
+    if (item1 === item2) return true;
+    if (!item1 || !item2) return false;
+    return item1.id === item2.id;
   }
 
   // --- CARGA DE DATOS DESDE EL BACKEND ---
@@ -87,7 +104,7 @@ export class PanelAdminComponent implements OnInit {
       error: (err) => console.error('Error al cargar solicitudes pendientes:', err),
     });
 
-    // 6. Cargar TODAS las solicitudes (Aprobadas, Pendientes, Rechazadas) para la tabla general y el calendario
+    // 6. Cargar TODAS las solicitudes
     const reqTodas = this.apiService.getTodasSolicitudes
       ? this.apiService.getTodasSolicitudes()
       : this.apiService.getMisSolicitudes();
@@ -112,30 +129,78 @@ export class PanelAdminComponent implements OnInit {
   guardarUsuario(): void {
     if (!this.nuevoUsuario.nombre || !this.nuevoUsuario.email) return;
 
-    this.apiService.guardarUsuario(this.nuevoUsuario).subscribe({
+    // Validación: Contraseña obligatoria solo al crear (cuando no hay ID)
+    if (!this.nuevoUsuario.id && !this.nuevoUsuario.password) {
+      alert('Por favor, ingresa una contraseña temporal para el nuevo usuario.');
+      return;
+    }
+
+    // 🛠️ Mapeo del payload para evitar error HTTP 500 en Spring Boot/API REST
+    const usuarioPayload: any = {
+      id: this.nuevoUsuario.id,
+      nombre: this.nuevoUsuario.nombre,
+      email: this.nuevoUsuario.email,
+      puesto: this.nuevoUsuario.puesto,
+      delegacion: this.nuevoUsuario.delegacion,
+      // Si la API requiere los IDs planos en lugar de los objetos completos:
+      puestoId: this.nuevoUsuario.puesto?.id || null,
+      delegacionId: this.nuevoUsuario.delegacion?.id || null,
+    };
+
+    // Solo adjuntamos password si se está creando o si se escribió una nueva
+    if (this.nuevoUsuario.password) {
+      usuarioPayload.password = this.nuevoUsuario.password;
+    }
+
+    this.apiService.guardarUsuario(usuarioPayload).subscribe({
       next: () => {
         this.cargarDatos();
         this.resetUsuarioForm();
       },
-      error: (err) => alert('Error al guardar el usuario: ' + err.message),
+      error: (err) => {
+        console.error('Detalle del error al guardar usuario:', err);
+        alert('Error al guardar el usuario: ' + (err.error?.message || err.message));
+      },
     });
   }
 
   editarUsuario(u: any): void {
-    this.nuevoUsuario = { ...u };
+    const puestoEncontrado = this.puestos.find((p) => p.id === (u.puesto?.id ?? u.puesto)) || null;
+
+    const delegacionEncontrada =
+      this.delegaciones.find((d) => d.id === (u.delegacion?.id ?? u.delegacion)) || null;
+
+    this.nuevoUsuario = {
+      ...u,
+      password: '', // Vaciamos por seguridad al editar
+      puesto: puestoEncontrado,
+      delegacion: delegacionEncontrada,
+    };
   }
 
   eliminarUsuario(id: number): void {
     if (confirm('¿Seguro que deseas eliminar este usuario?')) {
       this.apiService.eliminarUsuario(id).subscribe({
-        next: () => this.cargarDatos(),
+        next: () => {
+          this.cargarDatos();
+          if (this.nuevoUsuario.id === id) {
+            this.resetUsuarioForm();
+          }
+        },
         error: (err) => alert('Error al eliminar usuario'),
       });
     }
   }
 
   resetUsuarioForm(): void {
-    this.nuevoUsuario = { id: null, nombre: '', email: '', puesto: '', delegacion: '' };
+    this.nuevoUsuario = {
+      id: null,
+      nombre: '',
+      email: '',
+      password: '',
+      puesto: null,
+      delegacion: null,
+    };
   }
 
   // --- CRUD REAL DE PUESTOS ---
@@ -145,7 +210,7 @@ export class PanelAdminComponent implements OnInit {
     this.apiService.guardarPuesto(this.nuevoPuesto).subscribe({
       next: () => {
         this.cargarDatos();
-        this.nuevoPuesto = { id: null, nombre: '' };
+        this.resetPuestoForm();
       },
       error: (err) => alert('Error al guardar puesto'),
     });
@@ -158,10 +223,19 @@ export class PanelAdminComponent implements OnInit {
   eliminarPuesto(id: number): void {
     if (confirm('¿Deseas eliminar este puesto?')) {
       this.apiService.eliminarPuesto(id).subscribe({
-        next: () => this.cargarDatos(),
+        next: () => {
+          this.cargarDatos();
+          if (this.nuevoPuesto.id === id) {
+            this.resetPuestoForm();
+          }
+        },
         error: (err) => alert('Error al eliminar puesto'),
       });
     }
+  }
+
+  resetPuestoForm(): void {
+    this.nuevoPuesto = { id: null, nombre: '' };
   }
 
   // --- CRUD REAL DE DELEGACIONES ---
@@ -171,7 +245,7 @@ export class PanelAdminComponent implements OnInit {
     this.apiService.guardarDelegacion(this.nuevaDelegacion).subscribe({
       next: () => {
         this.cargarDatos();
-        this.nuevaDelegacion = { id: null, nombre: '', ciudad: '' };
+        this.resetDelegacionForm();
       },
       error: (err) => alert('Error al guardar delegación'),
     });
@@ -184,10 +258,19 @@ export class PanelAdminComponent implements OnInit {
   eliminarDelegacion(id: number): void {
     if (confirm('¿Deseas eliminar esta delegación?')) {
       this.apiService.eliminarDelegacion(id).subscribe({
-        next: () => this.cargarDatos(),
+        next: () => {
+          this.cargarDatos();
+          if (this.nuevaDelegacion.id === id) {
+            this.resetDelegacionForm();
+          }
+        },
         error: (err) => alert('Error al eliminar delegación'),
       });
     }
+  }
+
+  resetDelegacionForm(): void {
+    this.nuevaDelegacion = { id: null, nombre: '', ciudad: '' };
   }
 
   // --- CRUD REAL DE FESTIVOS ---
@@ -195,7 +278,9 @@ export class PanelAdminComponent implements OnInit {
     if (!this.nuevoFestivo.fecha || !this.nuevoFestivo.descripcion) return;
 
     const valorDelegacion =
-      this.nuevoFestivo.delegacionId !== '' ? Number(this.nuevoFestivo.delegacionId) : '';
+      this.nuevoFestivo.delegacionId !== '' && this.nuevoFestivo.delegacionId !== null
+        ? Number(this.nuevoFestivo.delegacionId)
+        : '';
 
     this.apiService
       .guardarFestivo({ ...this.nuevoFestivo, delegacionId: valorDelegacion })
@@ -209,13 +294,21 @@ export class PanelAdminComponent implements OnInit {
   }
 
   editarFestivo(f: any): void {
-    this.nuevoFestivo = { ...f, delegacionId: f.delegacionId ?? '' };
+    this.nuevoFestivo = {
+      ...f,
+      delegacionId: f.delegacionId ?? f.delegacion?.id ?? '',
+    };
   }
 
   eliminarFestivo(id: number): void {
     if (confirm('¿Deseas eliminar este festivo?')) {
       this.apiService.eliminarFestivo(id).subscribe({
-        next: () => this.cargarDatos(),
+        next: () => {
+          this.cargarDatos();
+          if (this.nuevoFestivo.id === id) {
+            this.resetFestivoForm();
+          }
+        },
         error: (err) => alert('Error al eliminar festivo'),
       });
     }
@@ -249,10 +342,15 @@ export class PanelAdminComponent implements OnInit {
     const primerDiaSemana = new Date(año, mes, 1).getDay();
     const totalDias = new Date(año, mes + 1, 0).getDate();
     const inicioVacio = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
-    this.diasDelMes = [];
 
-    for (let i = 0; i < inicioVacio; i++) this.diasDelMes.push(null);
-    for (let dia = 1; dia <= totalDias; dia++) this.diasDelMes.push(dia);
+    const nuevosDias: (number | null)[] = [];
+    for (let i = 0; i < inicioVacio; i++) nuevosDias.push(null);
+    for (let dia = 1; dia <= totalDias; dia++) nuevosDias.push(dia);
+
+    this.diasDelMes = nuevosDias;
+
+    // 🛠️ Fuerza la sincronización de Angular para evitar NG0100
+    this.cdr.detectChanges();
   }
 
   cambiarMes(direccion: number): void {
@@ -261,9 +359,6 @@ export class PanelAdminComponent implements OnInit {
     this.generarCalendario();
   }
 
-  /**
-   * Filtra únicamente las solicitudes en estado APROBADO para mostrarlas en el calendario.
-   */
   obtenerEmpleadosDeVacaciones(dia: number | null): string[] {
     if (!dia) return [];
 
@@ -273,7 +368,6 @@ export class PanelAdminComponent implements OnInit {
     const empleadosEncontrados: string[] = [];
 
     for (const solicitud of this.todasLasSolicitudes) {
-      // ⚠️ SOLO MOSTRAR VACACIONES APROBADAS EN EL CALENDARIO
       if (solicitud.estado === 'Aprobado' && solicitud.fechaInicio && solicitud.fechaFin) {
         const inicio = new Date(solicitud.fechaInicio + 'T00:00:00').getTime();
         const fin = new Date(solicitud.fechaFin + 'T23:59:59').getTime();

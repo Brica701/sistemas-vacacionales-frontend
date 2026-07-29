@@ -106,12 +106,12 @@
       <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
         <thead>
         <tr style="border-bottom: 2px solid #f1f5f9; color: #64748b;">
-          <th style="padding: 10px; font-weight: 600;">ID</th>
-          <th style="padding: 10px; font-weight: 600;">Empleado</th>
-          <th style="padding: 10px; font-weight: 600;">Fechas</th>
-          <th style="padding: 10px; font-weight: 600;">Días Hábiles</th>
-          <th style="padding: 10px; font-weight: 600;">Estado</th>
-          <th style="padding: 10px; font-weight: 600;">Observaciones</th>
+          <th style="padding: 10px;">ID</th>
+          <th style="padding: 10px;">Empleado</th>
+          <th style="padding: 10px;">Fechas</th>
+          <th style="padding: 10px;">Días Hábiles</th>
+          <th style="padding: 10px;">Estado</th>
+          <th style="padding: 10px;">Observaciones</th>
         </tr>
         </thead>
         <tbody>
@@ -155,14 +155,20 @@
       <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Correo electrónico</label>
       <input type="email" [(ngModel)]="nuevoUsuario.email" placeholder="juan@empresa.com" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
 
+      <!-- Campo para la Contraseña Temporal (se oculta automáticamente al editar) -->
+      <ng-container *ngIf="!nuevoUsuario.id">
+        <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Contraseña Temporal</label>
+        <input type="password" [(ngModel)]="nuevoUsuario.password" placeholder="••••••••" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 13px; outline: none;">
+      </ng-container>
+
       <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Puesto Laboral</label>
-      <select [(ngModel)]="nuevoUsuario.puesto" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; box-sizing: border-box; font-size: 13px; outline: none;">
+      <select [(ngModel)]="nuevoUsuario.puesto" [compareWith]="compareFn" style="width:100%; padding: 9px 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; box-sizing: border-box; font-size: 13px; outline: none;">
         <option [ngValue]="null">-- Seleccionar Puesto --</option>
         <option *ngFor="let p of puestos" [ngValue]="p">{{ p.nombre }}</option>
       </select>
 
       <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Delegación / Sede</label>
-      <select [(ngModel)]="nuevoUsuario.delegacion" style="width:100%; padding: 9px 12px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; box-sizing: border-box; font-size: 13px; outline: none;">
+      <select [(ngModel)]="nuevoUsuario.delegacion" [compareWith]="compareFn" style="width:100%; padding: 9px 12px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; box-sizing: border-box; font-size: 13px; outline: none;">
         <option [ngValue]="null">-- Seleccionar Delegación --</option>
         <option *ngFor="let d of delegaciones" [ngValue]="d">{{ d.nombre }} ({{ d.ciudad }})</option>
       </select>
