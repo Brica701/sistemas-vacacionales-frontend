@@ -3,10 +3,19 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api';
 
+// ✅ Importación de interfaces y enums globales
+import {
+  Usuario,
+  SolicitudPermiso,
+  EstadoSolicitud,
+  TipoPermiso,
+} from '../../models/empresa.model';
+
 interface ItemCalendario {
   nombreEmpleado: string;
   estado: string;
   esMio: boolean;
+  tipo?: TipoPermiso;
 }
 
 @Component({
@@ -17,14 +26,30 @@ interface ItemCalendario {
   styleUrl: './panel-empleado.css',
 })
 export class PanelEmpleadoComponent implements OnInit {
-  usuarioActual: any = null;
+  usuarioActual: Usuario | null = null;
 
-  misSolicitudes: any[] = [];
-  todasLasSolicitudes: any[] = [];
+  misSolicitudes: SolicitudPermiso[] = [];
+  todasLasSolicitudes: SolicitudPermiso[] = [];
+
+  // 🌟 FASE 1: VARIABLES PARA BALANCE DE BOLSA DE DÍAS
+  diasTotales: number = 22;      // Asignación anual estándar
+  diasDisponibles: number = 22;  // Saldo libre restante
+  diasUsados: number = 0;       // Días ya aprobados
+  diasPendientes: number = 0;   // Días en revisión por el admin
 
   fechaInicio: string = '';
   fechaFin: string = '';
+  tipoPermisoSelected: TipoPermiso = TipoPermiso.VACACIONES;
   mensajeError: string = '';
+
+  // Opciones para el selector de tipo de permiso en la vista
+  tiposPermiso = [
+    { clave: TipoPermiso.VACACIONES, etiqueta: 'Vacaciones' },
+    { clave: TipoPermiso.BAJA_MEDICA, etiqueta: 'Baja Médica' },
+    { clave: TipoPermiso.ASUNTOS_PROPIOS, etiqueta: 'Asuntos Propios' },
+    { clave: TipoPermiso.TELETRABAJO, etiqueta: 'Teletrabajo' },
+    { clave: TipoPermiso.MATERNIDAD_PATERNIDAD, etiqueta: 'Maternidad/Paternidad' },
+  ];
 
   filtroVista: string = 'mis_vacaciones';
 
@@ -58,6 +83,10 @@ export class PanelEmpleadoComponent implements OnInit {
       if (userStr) {
         try {
           this.usuarioActual = JSON.parse(userStr);
+          // 🌟 FASE 1: Si el usuario trae su total de días asignados desde la BBDD, se actualiza
+          if (this.usuarioActual && (this.usuarioActual as any).diasVacacionesTotales) {
+            this.diasTotales = (this.usuarioActual as any).diasVacacionesTotales;
+          }
         } catch (e) {
           console.error('Error al parsear el usuario de localStorage', e);
         }
@@ -68,8 +97,10 @@ export class PanelEmpleadoComponent implements OnInit {
   cargarSolicitudes(): void {
     // 1. Cargar mis solicitudes
     this.apiService.getMisSolicitudes().subscribe({
-      next: (data: any) => {
+      next: (data: SolicitudPermiso[]) => {
         this.misSolicitudes = data || [];
+        // 🌟 FASE 1: Calculamos el balance en cuanto obtenemos las solicitudes
+        this.calcularBolsaDeDias();
         this.generarCalendario();
       },
       error: (err: any) => console.error('Error al cargar mis solicitudes', err),
@@ -81,12 +112,78 @@ export class PanelEmpleadoComponent implements OnInit {
       : this.apiService.getMisSolicitudes();
 
     request.subscribe({
-      next: (data: any) => {
+      next: (data: SolicitudPermiso[]) => {
         this.todasLasSolicitudes = data || [];
         this.generarCalendario();
       },
       error: (err: any) => console.error('Error al cargar solicitudes generales', err),
     });
+  }
+
+  // 🌟 FASE 1: LÓGICA DE DESCUENTO AUTOMÁTICO DE SALDO Y CÁLCULO DE BOLSA
+  calcularBolsaDeDias(): void {
+    if (!this.misSolicitudes || this.misSolicitudes.length === 0) {
+      this.diasUsados = 0;
+      this.diasPendientes = 0;
+      this.diasDisponibles = this.diasTotales;
+      return;
+    }
+
+    // Sumar días aprobados (solo permisos tipo Vacaciones o que consuman saldo)
+    this.diasUsados = this.misSolicitudes
+      .filter((s) => {
+        const estado = (s.estado as string)?.toUpperCase();
+        return (
+          estado === 'APROBADO' &&
+          (s.tipo === TipoPermiso.VACACIONES || !s.tipo)
+        );
+      })
+      .reduce(
+        (acc, s) =>
+          acc +
+          (s.diasSolicitados || (s as any).diasLaborablesCalculados || this.calcularDiasLaborables(s.fechaInicio, s.fechaFin)),
+        0
+      );
+
+    // Sumar días pendientes de aprobación
+    this.diasPendientes = this.misSolicitudes
+      .filter((s) => {
+        const estado = (s.estado as string)?.toUpperCase();
+        return (
+          estado === 'PENDIENTE' &&
+          (s.tipo === TipoPermiso.VACACIONES || !s.tipo)
+        );
+      })
+      .reduce(
+        (acc, s) =>
+          acc +
+          (s.diasSolicitados || (s as any).diasLaborablesCalculados || this.calcularDiasLaborables(s.fechaInicio, s.fechaFin)),
+        0
+      );
+
+    // Descuento automático de saldo libre
+    this.diasDisponibles = Math.max(0, this.diasTotales - this.diasUsados);
+  }
+
+  // 🌟 FASE 1: ALGORITMO AUXILIAR DE CÁLCULO DE DÍAS LABORABLES (Sin sábados ni domingos)
+  private calcularDiasLaborables(inicioStr: string, finStr: string): number {
+    if (!inicioStr || !finStr) return 0;
+
+    const fechaInicio = new Date(inicioStr + 'T00:00:00');
+    const fechaFin = new Date(finStr + 'T00:00:00');
+    let contadorDias = 0;
+
+    const cursor = new Date(fechaInicio);
+    while (cursor <= fechaFin) {
+      const diaSemana = cursor.getDay();
+      // 0 = Domingo, 6 = Sábado
+      if (diaSemana !== 0 && diaSemana !== 6) {
+        contadorDias++;
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return contadorDias;
   }
 
   enviarSolicitud(): void {
@@ -102,8 +199,24 @@ export class PanelEmpleadoComponent implements OnInit {
       return;
     }
 
-    // VALIDACIÓN 2: Obtener ID con compatibilidad/fallback
-    const userId = this.usuarioActual?.id || this.usuarioActual?.usuarioId;
+    // VALIDACIÓN 2: Fecha inicio no mayor que fin
+    if (new Date(this.fechaInicio) > new Date(this.fechaFin)) {
+      this.mensajeError = 'La fecha de inicio no puede ser posterior a la fecha de fin.';
+      return;
+    }
+
+    // 🌟 FASE 1: VALIDACIÓN 3 - Saldo disponible suficiente
+    const diasSolicitados = this.calcularDiasLaborables(this.fechaInicio, this.fechaFin);
+    if (
+      this.tipoPermisoSelected === TipoPermiso.VACACIONES &&
+      diasSolicitados > this.diasDisponibles
+    ) {
+      this.mensajeError = `No dispones de suficientes días. Solicitas ${diasSolicitados} días y te quedan ${this.diasDisponibles}.`;
+      return;
+    }
+
+    // VALIDACIÓN 4: Obtener ID con compatibilidad
+    const userId = this.usuarioActual?.id;
 
     if (!userId) {
       this.mensajeError = 'Sesión no válida o usuario sin ID. Por favor, vuelve a iniciar sesión.';
@@ -111,11 +224,14 @@ export class PanelEmpleadoComponent implements OnInit {
       return;
     }
 
-    const payload = {
+    // PAYLOAD
+    const payload: Partial<SolicitudPermiso> = {
       fechaInicio: this.fechaInicio,
       fechaFin: this.fechaFin,
-      estado: 'Pendiente',
-      usuario: { id: userId },
+      tipo: this.tipoPermisoSelected,
+      estado: EstadoSolicitud.PENDIENTE,
+      usuario: { id: userId } as any,
+      diasSolicitados: diasSolicitados, // 👈 Se envía el cálculo de días laborables
     };
 
     this.apiService.solicitarVacaciones(payload).subscribe({
@@ -180,8 +296,9 @@ export class PanelEmpleadoComponent implements OnInit {
       if (this.estaEnRango(fechaEvaluada, sol.fechaInicio, sol.fechaFin)) {
         resultado.push({
           nombreEmpleado: 'Yo',
-          estado: sol.estado || 'Pendiente',
+          estado: sol.estado || EstadoSolicitud.PENDIENTE,
           esMio: true,
+          tipo: sol.tipo,
         });
       }
     }
@@ -191,12 +308,16 @@ export class PanelEmpleadoComponent implements OnInit {
     }
 
     // Compañeros
-    const miId = this.usuarioActual?.id || this.usuarioActual?.usuarioId;
+    const miId = this.usuarioActual?.id;
 
     for (const sol of this.todasLasSolicitudes) {
-      const idPropietario = sol.usuario?.id || sol.usuario?.usuarioId;
+      const idPropietario = sol.usuario?.id;
       if (idPropietario === miId) continue;
-      if (sol.estado !== 'Aprobado') continue;
+
+      const esAprobado =
+        sol.estado === EstadoSolicitud.APROBADO || (sol.estado as string) === 'Aprobado';
+
+      if (!esAprobado) continue;
 
       if (this.estaEnRango(fechaEvaluada, sol.fechaInicio, sol.fechaFin)) {
         let incluir = false;
@@ -222,6 +343,7 @@ export class PanelEmpleadoComponent implements OnInit {
             nombreEmpleado: sol.usuario?.nombre || `Usuario #${idPropietario}`,
             estado: 'Aprobado',
             esMio: false,
+            tipo: sol.tipo,
           });
         }
       }
@@ -233,7 +355,6 @@ export class PanelEmpleadoComponent implements OnInit {
   private estaEnRango(fecha: Date, inicioStr: string, finStr: string): boolean {
     if (!inicioStr || !finStr) return false;
 
-    // Normalizar a formato YYYY-MM-DD ignorando discrepancias de zona horaria
     const fechaTimestamp = fecha.getTime();
     const inicio = new Date(inicioStr + 'T00:00:00').getTime();
     const fin = new Date(finStr + 'T23:59:59').getTime();

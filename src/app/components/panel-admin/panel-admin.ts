@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api';
 
+// ✅ Única fuente de verdad para TipoPermiso y los demás tipos
+import { Usuario, SolicitudPermiso, TipoPermiso, RolUsuario } from '../../models/empresa.model';
+
 @Component({
   selector: 'app-panel-admin',
   standalone: true,
@@ -12,22 +15,37 @@ import { ApiService } from '../../services/api';
 })
 export class PanelAdminComponent implements OnInit {
   // --- ARRAYS DE DATOS REALES ---
-  usuarios: any[] = [];
+  usuarios: Usuario[] = [];
   puestos: any[] = [];
   delegaciones: any[] = [];
   festivos: any[] = [];
-  solicitudesPendientes: any[] = [];
-  todasLasSolicitudes: any[] = []; // Contiene Aprobadas, Rechazadas y Pendientes
+  solicitudesPendientes: SolicitudPermiso[] = [];
+  todasLasSolicitudes: SolicitudPermiso[] = [];
+
+  // --- OPCIONES PARA TIPOS DE PERMISO ---
+  tiposPermiso: { clave: TipoPermiso; etiqueta: string }[] = [
+    { clave: TipoPermiso.VACACIONES, etiqueta: 'Vacaciones' },
+    { clave: TipoPermiso.BAJA_MEDICA, etiqueta: 'Baja Médica' },
+    { clave: TipoPermiso.ASUNTOS_PROPIOS, etiqueta: 'Asuntos Propios' },
+    { clave: TipoPermiso.TELETRABAJO, etiqueta: 'Teletrabajo' },
+    { clave: TipoPermiso.MATERNIDAD_PATERNIDAD, etiqueta: 'Maternidad/Paternidad' },
+  ];
 
   // --- MODELOS PARA FORMULARIOS ---
-  nuevoUsuario: any = {
-    id: null,
+  nuevoUsuario: Partial<Usuario> = {
+    id: undefined,
     nombre: '',
     email: '',
     password: '',
     puesto: null,
     delegacion: null,
+    diasVacacionesTotales: 22,
+    diasVacacionesConsumidos: 0,
+    diasAsuntosPropiosTotales: 6,
+    diasAsuntosPropiosConsumidos: 0,
+    rol: RolUsuario.EMPLEADO,
   };
+
   nuevoPuesto: any = { id: null, nombre: '' };
   nuevaDelegacion: any = { id: null, nombre: '', ciudad: '' };
   nuevoFestivo: any = { id: null, fecha: '', descripcion: '', delegacionId: '' };
@@ -58,7 +76,7 @@ export class PanelAdminComponent implements OnInit {
 
   constructor(
     private apiService: ApiService,
-    private cdr: ChangeDetectorRef, // 👈 Inyectado para solucionar NG0100
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -74,49 +92,43 @@ export class PanelAdminComponent implements OnInit {
 
   // --- CARGA DE DATOS DESDE EL BACKEND ---
   cargarDatos(): void {
-    // 1. Cargar Usuarios
     this.apiService.getUsuarios().subscribe({
-      next: (data: any[]) => (this.usuarios = data || []),
+      next: (data: Usuario[]) => (this.usuarios = data || []),
       error: (err) => console.error('Error al cargar usuarios:', err),
     });
 
-    // 2. Cargar Puestos
     this.apiService.getPuestos().subscribe({
       next: (data: any[]) => (this.puestos = data || []),
       error: (err) => console.error('Error al cargar puestos:', err),
     });
 
-    // 3. Cargar Delegaciones
     this.apiService.getDelegaciones().subscribe({
       next: (data: any[]) => (this.delegaciones = data || []),
       error: (err) => console.error('Error al cargar delegaciones:', err),
     });
 
-    // 4. Cargar Festivos
     this.apiService.getFestivos().subscribe({
       next: (data: any[]) => (this.festivos = data || []),
       error: (err) => console.error('Error al cargar festivos:', err),
     });
 
-    // 5. Cargar Solicitudes Pendientes de Vacaciones
     this.apiService.getSolicitudesPendientes().subscribe({
-      next: (data: any[]) => (this.solicitudesPendientes = data || []),
+      next: (data: SolicitudPermiso[]) => (this.solicitudesPendientes = data || []),
       error: (err) => console.error('Error al cargar solicitudes pendientes:', err),
     });
 
-    // 6. Cargar TODAS las solicitudes
     const reqTodas = this.apiService.getTodasSolicitudes
       ? this.apiService.getTodasSolicitudes()
       : this.apiService.getMisSolicitudes();
 
     reqTodas.subscribe({
-      next: (data: any[]) => {
+      next: (data: SolicitudPermiso[]) => {
         this.todasLasSolicitudes = data || [];
-        this.generarCalendario();
+        queueMicrotask(() => this.generarCalendario());
       },
       error: (err) => {
         console.error('Error al cargar todas las solicitudes:', err);
-        this.generarCalendario();
+        queueMicrotask(() => this.generarCalendario());
       },
     });
   }
@@ -125,30 +137,135 @@ export class PanelAdminComponent implements OnInit {
     this.pestanaActiva = pestana;
   }
 
+  // --- CÁLCULO DE DÍAS LABORABLES Y BOLSA ---
+
+  /**
+   * Calcula los días hábiles/laborables entre dos fechas desestimando
+   * fines de semana y festivos registrados.
+   */
+  calcularDiasLaborables(
+    fechaInicioStr: string,
+    fechaFinStr: string,
+    delegacionId?: number,
+  ): number {
+    if (!fechaInicioStr || !fechaFinStr) return 0;
+
+    let fechaCursor = new Date(fechaInicioStr + 'T00:00:00');
+    const fechaFin = new Date(fechaFinStr + 'T00:00:00');
+    let diasHabiles = 0;
+
+    // Fechas de festivos a comparar
+    const marcasFestivas = this.festivos
+      .filter((f) => !f.delegacionId || f.delegacionId === delegacionId)
+      .map((f) => new Date(f.fecha + 'T00:00:00').getTime());
+
+    while (fechaCursor <= fechaFin) {
+      const diaSemana = fechaCursor.getDay(); // 0 = Domingo, 6 = Sábado
+      const tiempoActual = fechaCursor.getTime();
+
+      const esFinDeSemana = diaSemana === 0 || diaSemana === 6;
+      const esFestivo = marcasFestivas.includes(tiempoActual);
+
+      if (!esFinDeSemana && !esFestivo) {
+        diasHabiles++;
+      }
+      fechaCursor.setDate(fechaCursor.getDate() + 1);
+    }
+
+    return diasHabiles;
+  }
+
+  obtenerDiasDisponibles(
+    usuario: Usuario | any,
+    tipoPermiso: TipoPermiso | string = TipoPermiso.VACACIONES,
+  ): number {
+    if (!usuario) return 0;
+    if (tipoPermiso === TipoPermiso.ASUNTOS_PROPIOS) {
+      return (usuario.diasAsuntosPropiosTotales ?? 6) - (usuario.diasAsuntosPropiosConsumidos ?? 0);
+    }
+    // Por defecto calcula Vacaciones libres
+    return (usuario.diasVacacionesTotales ?? 22) - (usuario.diasVacacionesConsumidos ?? 0);
+  }
+
+  // 🌟 MÉTODO CORREGIDO PARA AJUSTAR (SUMAR/RESTAR) DÍAS A UN EMPLEADO
+  ajustarDiasEmpleado(
+    usuario: Usuario,
+    cantidadDias: number,
+    tipo: 'VACACIONES' | 'ASUNTOS_PROPIOS',
+  ): void {
+    if (!usuario.id) return;
+
+    // Crear clon para la manipulación
+    const usuarioClon: Usuario = { ...usuario };
+
+    if (tipo === 'VACACIONES') {
+      const nuevoTotal = (usuarioClon.diasVacacionesTotales ?? 22) + cantidadDias;
+      if (nuevoTotal < 0) {
+        alert('El total de días no puede ser negativo.');
+        return;
+      }
+      usuarioClon.diasVacacionesTotales = nuevoTotal;
+    } else {
+      const nuevoTotal = (usuarioClon.diasAsuntosPropiosTotales ?? 6) + cantidadDias;
+      if (nuevoTotal < 0) {
+        alert('El total de días no puede ser negativo.');
+        return;
+      }
+      usuarioClon.diasAsuntosPropiosTotales = nuevoTotal;
+    }
+
+    // Respuesta optimista en la vista
+    const valorOriginalVacaciones = usuario.diasVacacionesTotales;
+    const valorOriginalAsuntos = usuario.diasAsuntosPropiosTotales;
+
+    usuario.diasVacacionesTotales = usuarioClon.diasVacacionesTotales;
+    usuario.diasAsuntosPropiosTotales = usuarioClon.diasAsuntosPropiosTotales;
+
+    // Enviar la petición de actualización al servidor
+    this.apiService.guardarUsuario(usuarioClon).subscribe({
+      next: (usuarioRespuesta) => {
+        // Sincronizar datos devueltos por la API si aplica
+        if (usuarioRespuesta) {
+          Object.assign(usuario, usuarioRespuesta);
+        }
+      },
+      error: (err) => {
+        console.error('Error al actualizar días en el servidor:', err);
+        // Revertir cambios locales si el servidor falla
+        usuario.diasVacacionesTotales = valorOriginalVacaciones;
+        usuario.diasAsuntosPropiosTotales = valorOriginalAsuntos;
+        alert(
+          'Error al actualizar los días del usuario: ' +
+            (err.error?.message || err.message || 'Error del servidor'),
+        );
+      },
+    });
+  }
+
   // --- CRUD REAL DE USUARIOS ---
   guardarUsuario(): void {
     if (!this.nuevoUsuario.nombre || !this.nuevoUsuario.email) return;
 
-    // Validación: Contraseña obligatoria solo al crear (cuando no hay ID)
     if (!this.nuevoUsuario.id && !this.nuevoUsuario.password) {
       alert('Por favor, ingresa una contraseña temporal para el nuevo usuario.');
       return;
     }
 
-    // 🛠️ Mapeo del payload para evitar error HTTP 500 en Spring Boot/API REST
     const usuarioPayload: any = {
       id: this.nuevoUsuario.id,
       nombre: this.nuevoUsuario.nombre,
       email: this.nuevoUsuario.email,
       puesto: this.nuevoUsuario.puesto,
       delegacion: this.nuevoUsuario.delegacion,
-      // Si la API requiere los IDs planos en lugar de los objetos completos:
-      puestoId: this.nuevoUsuario.puesto?.id || null,
-      delegacionId: this.nuevoUsuario.delegacion?.id || null,
+      diasVacacionesTotales: Number(this.nuevoUsuario.diasVacacionesTotales ?? 22),
+      diasVacacionesConsumidos: Number(this.nuevoUsuario.diasVacacionesConsumidos ?? 0),
+      diasAsuntosPropiosTotales: Number(this.nuevoUsuario.diasAsuntosPropiosTotales ?? 6),
+      diasAsuntosPropiosConsumidos: Number(this.nuevoUsuario.diasAsuntosPropiosConsumidos ?? 0),
+      rol: this.nuevoUsuario.rol || RolUsuario.EMPLEADO,
     };
 
-    // Solo adjuntamos password si se está creando o si se escribió una nueva
-    if (this.nuevoUsuario.password) {
+    // Incluir contraseña solo si se ha rellenado
+    if (this.nuevoUsuario.password && this.nuevoUsuario.password.trim() !== '') {
       usuarioPayload.password = this.nuevoUsuario.password;
     }
 
@@ -164,21 +281,26 @@ export class PanelAdminComponent implements OnInit {
     });
   }
 
-  editarUsuario(u: any): void {
+  editarUsuario(u: Usuario): void {
     const puestoEncontrado = this.puestos.find((p) => p.id === (u.puesto?.id ?? u.puesto)) || null;
-
     const delegacionEncontrada =
       this.delegaciones.find((d) => d.id === (u.delegacion?.id ?? u.delegacion)) || null;
 
     this.nuevoUsuario = {
       ...u,
-      password: '', // Vaciamos por seguridad al editar
+      password: '',
       puesto: puestoEncontrado,
       delegacion: delegacionEncontrada,
+      diasVacacionesTotales: u.diasVacacionesTotales ?? 22,
+      diasVacacionesConsumidos: u.diasVacacionesConsumidos ?? 0,
+      diasAsuntosPropiosTotales: u.diasAsuntosPropiosTotales ?? 6,
+      diasAsuntosPropiosConsumidos: u.diasAsuntosPropiosConsumidos ?? 0,
+      rol: u.rol || RolUsuario.EMPLEADO,
     };
   }
 
-  eliminarUsuario(id: number): void {
+  eliminarUsuario(id: number | undefined): void {
+    if (!id) return;
     if (confirm('¿Seguro que deseas eliminar este usuario?')) {
       this.apiService.eliminarUsuario(id).subscribe({
         next: () => {
@@ -187,19 +309,24 @@ export class PanelAdminComponent implements OnInit {
             this.resetUsuarioForm();
           }
         },
-        error: (err) => alert('Error al eliminar usuario'),
+        error: () => alert('Error al eliminar usuario'),
       });
     }
   }
 
   resetUsuarioForm(): void {
     this.nuevoUsuario = {
-      id: null,
+      id: undefined,
       nombre: '',
       email: '',
       password: '',
       puesto: null,
       delegacion: null,
+      diasVacacionesTotales: 22,
+      diasVacacionesConsumidos: 0,
+      diasAsuntosPropiosTotales: 6,
+      diasAsuntosPropiosConsumidos: 0,
+      rol: RolUsuario.EMPLEADO,
     };
   }
 
@@ -212,7 +339,7 @@ export class PanelAdminComponent implements OnInit {
         this.cargarDatos();
         this.resetPuestoForm();
       },
-      error: (err) => alert('Error al guardar puesto'),
+      error: () => alert('Error al guardar puesto'),
     });
   }
 
@@ -229,7 +356,7 @@ export class PanelAdminComponent implements OnInit {
             this.resetPuestoForm();
           }
         },
-        error: (err) => alert('Error al eliminar puesto'),
+        error: () => alert('Error al eliminar puesto'),
       });
     }
   }
@@ -247,7 +374,7 @@ export class PanelAdminComponent implements OnInit {
         this.cargarDatos();
         this.resetDelegacionForm();
       },
-      error: (err) => alert('Error al guardar delegación'),
+      error: () => alert('Error al guardar delegación'),
     });
   }
 
@@ -264,7 +391,7 @@ export class PanelAdminComponent implements OnInit {
             this.resetDelegacionForm();
           }
         },
-        error: (err) => alert('Error al eliminar delegación'),
+        error: () => alert('Error al eliminar delegación'),
       });
     }
   }
@@ -280,7 +407,7 @@ export class PanelAdminComponent implements OnInit {
     const valorDelegacion =
       this.nuevoFestivo.delegacionId !== '' && this.nuevoFestivo.delegacionId !== null
         ? Number(this.nuevoFestivo.delegacionId)
-        : '';
+        : null;
 
     this.apiService
       .guardarFestivo({ ...this.nuevoFestivo, delegacionId: valorDelegacion })
@@ -289,7 +416,7 @@ export class PanelAdminComponent implements OnInit {
           this.cargarDatos();
           this.resetFestivoForm();
         },
-        error: (err) => alert('Error al guardar el día festivo'),
+        error: () => alert('Error al guardar el día festivo'),
       });
   }
 
@@ -309,7 +436,7 @@ export class PanelAdminComponent implements OnInit {
             this.resetFestivoForm();
           }
         },
-        error: (err) => alert('Error al eliminar festivo'),
+        error: () => alert('Error al eliminar festivo'),
       });
     }
   }
@@ -318,12 +445,39 @@ export class PanelAdminComponent implements OnInit {
     this.nuevoFestivo = { id: null, fecha: '', descripcion: '', delegacionId: '' };
   }
 
-  // --- GESTIÓN DE VACACIONES REALES ---
+  // --- GESTIÓN DE VACACIONES REALES Y PERMISOS ---
   resolver(id: number, accion: 'Aprobado' | 'Rechazado'): void {
     const motivo = this.motivosRechazo[id] || '';
     if (accion === 'Rechazado' && !motivo.trim()) {
       alert('Por favor, escribe un motivo para rechazar la solicitud.');
       return;
+    }
+
+    const solicitud =
+      this.todasLasSolicitudes.find((s) => s.id === id) ||
+      this.solicitudesPendientes.find((s) => s.id === id);
+
+    // Validación de saldo de días al aprobar
+    if (accion === 'Aprobado' && solicitud) {
+      const tipo = (solicitud.tipo || TipoPermiso.VACACIONES) as TipoPermiso;
+      const diasLaborables = this.calcularDiasLaborables(
+        solicitud.fechaInicio,
+        solicitud.fechaFin,
+        solicitud.usuario?.delegacion?.id,
+      );
+
+      const usuario =
+        this.usuarios.find((u) => u.id === solicitud.usuario?.id) || solicitud.usuario;
+
+      if (tipo === TipoPermiso.VACACIONES || tipo === TipoPermiso.ASUNTOS_PROPIOS) {
+        const disponibles = this.obtenerDiasDisponibles(usuario, tipo);
+        if (diasLaborables > disponibles) {
+          alert(
+            `El usuario no dispone de días suficientes. Requiere: ${diasLaborables} día(s), Disponibles: ${disponibles}.`,
+          );
+          return;
+        }
+      }
     }
 
     this.apiService.resolverSolicitud(id, accion, motivo).subscribe({
@@ -348,8 +502,6 @@ export class PanelAdminComponent implements OnInit {
     for (let dia = 1; dia <= totalDias; dia++) nuevosDias.push(dia);
 
     this.diasDelMes = nuevosDias;
-
-    // 🛠️ Fuerza la sincronización de Angular para evitar NG0100
     this.cdr.detectChanges();
   }
 
@@ -368,15 +520,18 @@ export class PanelAdminComponent implements OnInit {
     const empleadosEncontrados: string[] = [];
 
     for (const solicitud of this.todasLasSolicitudes) {
-      if (solicitud.estado === 'Aprobado' && solicitud.fechaInicio && solicitud.fechaFin) {
-        const inicio = new Date(solicitud.fechaInicio + 'T00:00:00').getTime();
-        const fin = new Date(solicitud.fechaFin + 'T23:59:59').getTime();
+      if (solicitud.estado === 'APROBADO' || (solicitud.estado as string) === 'Aprobado') {
+        if (solicitud.fechaInicio && solicitud.fechaFin) {
+          const inicio = new Date(solicitud.fechaInicio + 'T00:00:00').getTime();
+          const fin = new Date(solicitud.fechaFin + 'T23:59:59').getTime();
 
-        if (fechaEvaluada >= inicio && fechaEvaluada <= fin) {
-          const nombreEmpleado =
-            solicitud.usuario?.nombre || `Usuario #${solicitud.usuario?.id || '?'}`;
-          if (!empleadosEncontrados.includes(nombreEmpleado)) {
-            empleadosEncontrados.push(nombreEmpleado);
+          if (fechaEvaluada >= inicio && fechaEvaluada <= fin) {
+            const tipoTexto = solicitud.tipo ? ` (${solicitud.tipo})` : '';
+            const nombreEmpleado = `${solicitud.usuario?.nombre || 'Usuario'}${tipoTexto}`;
+
+            if (!empleadosEncontrados.includes(nombreEmpleado)) {
+              empleadosEncontrados.push(nombreEmpleado);
+            }
           }
         }
       }

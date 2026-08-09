@@ -16,13 +16,78 @@
     </a>
   </header>
 
+  <!-- 🌟 FASE 1: TARJETAS DE SALDO DE DÍAS (BOLSA DE DÍAS) -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+
+    <!-- Días Libres / Disponibles -->
+    <div style="background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Días Libres</span>
+        <div style="font-size: 28px; font-weight: 800; color: #10b981; margin-top: 4px;">
+          {{ diasDisponibles }} <span style="font-size: 14px; font-weight: 600; color: #64748b;">días</span>
+        </div>
+      </div>
+      <div style="width: 44px; height: 44px; background: #dcfce7; color: #10b981; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+        🌴
+      </div>
+    </div>
+
+    <!-- Días Disfrutados / Aprobados -->
+    <div style="background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Días Usados</span>
+        <div style="font-size: 28px; font-weight: 800; color: #4f46e5; margin-top: 4px;">
+          {{ diasUsados }} <span style="font-size: 14px; font-weight: 600; color: #64748b;">días</span>
+        </div>
+      </div>
+      <div style="width: 44px; height: 44px; background: #eef2ff; color: #4f46e5; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+        ✅
+      </div>
+    </div>
+
+    <!-- Días Solicitados Pendientes -->
+    <div style="background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">En Revisión</span>
+        <div style="font-size: 28px; font-weight: 800; color: #f59e0b; margin-top: 4px;">
+          {{ diasPendientes }} <span style="font-size: 14px; font-weight: 600; color: #64748b;">días</span>
+        </div>
+      </div>
+      <div style="width: 44px; height: 44px; background: #fef3c7; color: #f59e0b; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+        ⏳
+      </div>
+    </div>
+
+    <!-- Total Anual Asignado -->
+    <div style="background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Total Anual</span>
+        <div style="font-size: 28px; font-weight: 800; color: #0f172a; margin-top: 4px;">
+          {{ diasTotales }} <span style="font-size: 14px; font-weight: 600; color: #64748b;">días</span>
+        </div>
+      </div>
+      <div style="width: 44px; height: 44px; background: #f1f5f9; color: #475569; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+        📅
+      </div>
+    </div>
+
+  </div>
+
   <div style="display: grid; grid-template-columns: minmax(320px, 1fr) minmax(550px, 1.8fr); gap: 24px; margin-bottom: 24px;">
 
     <!-- FORMULARIO DE SOLICITUD -->
     <div style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: fit-content;">
-      <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a;">📝 Solicitar Vacaciones</h3>
+      <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a;">📝 Solicitar Permiso / Ausencia</h3>
 
       <form (ngSubmit)="enviarSolicitud()">
+        <!-- SELECTOR TIPO DE PERMISO -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 6px; color: #475569; font-weight: 600; font-size: 13px;">Tipo de Solicitud</label>
+          <select [(ngModel)]="tipoPermisoSelected" name="tipoPermiso" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px; color: #0f172a; outline: none; background: white; font-weight: 500;">
+            <option *ngFor="let t of tiposPermiso" [value]="t.clave">{{ t.etiqueta }}</option>
+          </select>
+        </div>
+
         <div style="margin-bottom: 16px;">
           <label style="display: block; margin-bottom: 6px; color: #475569; font-weight: 600; font-size: 13px;">Fecha de Inicio</label>
           <input type="date" [(ngModel)]="fechaInicio" name="fechaInicio" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'" required>
@@ -89,7 +154,7 @@
           <!-- LISTA DE PERSONAS DE VACACIONES EN ESTE DÍA -->
           <div *ngIf="dia" style="display: flex; flex-direction: column; gap: 3px; width: 100%; margin-top: 2px;">
             <div *ngFor="let item of obtenerVacacionesDelDia(dia)"
-                 [style.background]="item.esMio ? (item.estado === 'Aprobado' ? '#10b981' : item.estado === 'Rechazado' ? '#ef4444' : '#f59e0b') : '#10b981'"
+                 [style.background]="item.esMio ? (($any(item.estado) === 'Aprobado' || $any(item.estado) === 'APROBADO') ? '#10b981' : ($any(item.estado) === 'Rechazado' || $any(item.estado) === 'RECHAZADO') ? '#ef4444' : '#f59e0b') : '#10b981'"
                  style="color: white; font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"
                  [title]="item.nombreEmpleado + ' (' + item.estado + ')'">
               {{ item.esMio ? 'Yo' : item.nombreEmpleado }}
@@ -121,12 +186,12 @@
       <tr *ngFor="let s of misSolicitudes" style="border-bottom: 1px solid #f1f5f9;">
         <td style="padding: 12px 10px; color: #94a3b8; font-weight: 600;">#{{ s.id }}</td>
         <td style="padding: 12px 10px; font-weight: 600; color: #1e293b;">{{ s.fechaInicio }} <span style="color:#94a3b8; font-weight: 400;">al</span> {{ s.fechaFin }}</td>
-        <td style="padding: 12px 10px; font-weight: 600; color: #475569;">{{ s.diasSolicitados || '-' }} días</td>
+        <td style="padding: 12px 10px; font-weight: 600; color: #475569;">{{ s.diasSolicitados || s.diasLaborablesCalculados || '-' }} días</td>
         <td style="padding: 12px 10px;">
             <span [ngStyle]="{
               'padding': '3px 10px', 'border-radius': '12px', 'font-size': '12px', 'font-weight': '600',
-              'color': s.estado === 'Aprobado' ? '#15803d' : s.estado === 'Rechazado' ? '#b91c1c' : '#b45309',
-              'background-color': s.estado === 'Aprobado' ? '#dcfce7' : s.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7'
+              'color': ($any(s.estado) === 'Aprobado' || $any(s.estado) === 'APROBADO') ? '#15803d' : ($any(s.estado) === 'Rechazado' || $any(s.estado) === 'RECHAZADO') ? '#b91c1c' : '#b45309',
+              'background-color': ($any(s.estado) === 'Aprobado' || $any(s.estado) === 'APROBADO') ? '#dcfce7' : ($any(s.estado) === 'Rechazado' || $any(s.estado) === 'RECHAZADO') ? '#fee2e2' : '#fef3c7'
             }">
               ● {{ s.estado || 'Pendiente' }}
             </span>

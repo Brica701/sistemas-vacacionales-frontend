@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Usuario, SolicitudPermiso, EstadoSolicitud } from '../models/empresa.model';
 
 @Injectable({
   providedIn: 'root',
@@ -11,15 +12,17 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   // --- USUARIOS ---
-  getUsuarios(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/usuarios`);
+  getUsuarios(): Observable<Usuario[]> {
+    return this.http.get<Usuario[]>(`${this.baseUrl}/usuarios`);
   }
-  guardarUsuario(usuario: any): Observable<any> {
+
+  guardarUsuario(usuario: Usuario): Observable<Usuario> {
     if (usuario.id) {
-      return this.http.put<any>(`${this.baseUrl}/usuarios/${usuario.id}`, usuario);
+      return this.http.put<Usuario>(`${this.baseUrl}/usuarios/${usuario.id}`, usuario);
     }
-    return this.http.post<any>(`${this.baseUrl}/usuarios`, usuario);
+    return this.http.post<Usuario>(`${this.baseUrl}/usuarios`, usuario);
   }
+
   eliminarUsuario(id: number): Observable<any> {
     return this.http.delete<any>(`${this.baseUrl}/usuarios/${id}`);
   }
@@ -28,9 +31,11 @@ export class ApiService {
   getPuestos(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/puestos`);
   }
+
   guardarPuesto(puesto: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/puestos`, puesto);
   }
+
   eliminarPuesto(id: number): Observable<any> {
     return this.http.delete<any>(`${this.baseUrl}/puestos/${id}`);
   }
@@ -39,9 +44,11 @@ export class ApiService {
   getDelegaciones(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/delegaciones`);
   }
+
   guardarDelegacion(delegacion: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/delegaciones`, delegacion);
   }
+
   eliminarDelegacion(id: number): Observable<any> {
     return this.http.delete<any>(`${this.baseUrl}/delegaciones/${id}`);
   }
@@ -50,48 +57,45 @@ export class ApiService {
   getFestivos(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/festivos`);
   }
+
   guardarFestivo(festivo: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/festivos`, festivo);
   }
+
   eliminarFestivo(id: number): Observable<any> {
     return this.http.delete<any>(`${this.baseUrl}/festivos/${id}`);
   }
 
-  // --- VACACIONES (PANEL DE CONTROL Y EMPLEADO) ---
+  // --- VACACIONES Y SOLICITUDES ---
 
-  // Apunta a: http://localhost:8080/api/admin/pendientes
-  getSolicitudesPendientes(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/admin/pendientes`);
+  getSolicitudesPendientes(): Observable<SolicitudPermiso[]> {
+    return this.http.get<SolicitudPermiso[]>(`${this.baseUrl}/admin/pendientes`);
   }
 
-  // Apunta a: http://localhost:8080/api/admin/resolver/{id}
   resolverSolicitud(
     id: number,
-    accion: 'Aprobado' | 'Rechazado',
+    accion: EstadoSolicitud | 'Aprobado' | 'Rechazado',
     motivo?: string,
   ): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/admin/resolver/${id}`, {
-      accion: accion, // Coincide con payload.get("accion") en Java
-      motivoRechazo: motivo || '', // Coincide con payload.get("motivoRechazo") en Java
+      accion: accion,
+      motivoRechazo: motivo || '',
     });
   }
 
-  // Apunta a: http://localhost:8080/api/empleado/solicitudes (Para mis solicitudes personales)
-  getMisSolicitudes(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/empleado/solicitudes`);
+  getMisSolicitudes(): Observable<SolicitudPermiso[]> {
+    return this.http.get<SolicitudPermiso[]>(`${this.baseUrl}/empleado/solicitudes`);
   }
 
-  // NUEVO: Enviar nueva solicitud de vacaciones desde la vista del empleado
-  solicitarVacaciones(payload: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/empleado/solicitar`, payload);
+  solicitarVacaciones(payload: Partial<SolicitudPermiso>): Observable<SolicitudPermiso> {
+    return this.http.post<SolicitudPermiso>(`${this.baseUrl}/empleado/solicitar`, payload);
   }
 
-  // NUEVO: Obtener absolutamente todas las solicitudes aprobadas/globales para ver los compañeros en el calendario
-  getTodasSolicitudes(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/vacaciones`);
+  getTodasSolicitudes(): Observable<SolicitudPermiso[]> {
+    return this.http.get<SolicitudPermiso[]>(`${this.baseUrl}/vacaciones`);
   }
 
-  // --- AUTENTICACIÓN (LOGIN REAL CON NEON) ---
+  // --- AUTENTICACIÓN ---
   login(email: string, contrasena: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/auth/login`, {
       email: email,
