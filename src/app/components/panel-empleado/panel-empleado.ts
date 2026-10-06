@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api';
@@ -32,10 +32,10 @@ export class PanelEmpleadoComponent implements OnInit {
   todasLasSolicitudes: SolicitudPermiso[] = [];
 
   // 🌟 FASE 1: VARIABLES PARA BALANCE DE BOLSA DE DÍAS
-  diasTotales: number = 22;      // Asignación anual estándar
-  diasDisponibles: number = 22;  // Saldo libre restante
-  diasUsados: number = 0;       // Días ya aprobados
-  diasPendientes: number = 0;   // Días en revisión por el admin
+  diasTotales: number = 22; // Asignación anual estándar
+  diasDisponibles: number = 22; // Saldo libre restante
+  diasUsados: number = 0; // Días ya aprobados
+  diasPendientes: number = 0; // Días en revisión por el admin
 
   fechaInicio: string = '';
   fechaFin: string = '';
@@ -70,7 +70,10 @@ export class PanelEmpleadoComponent implements OnInit {
     'Diciembre',
   ];
 
-  constructor(private apiService: ApiService) {}
+  constructor(
+    private apiService: ApiService,
+    private cdr: ChangeDetectorRef, // 👈 Inyección requerida para resolver NG0100
+  ) {}
 
   ngOnInit(): void {
     this.obtenerUsuarioSesion();
@@ -101,7 +104,11 @@ export class PanelEmpleadoComponent implements OnInit {
         this.misSolicitudes = data || [];
         // 🌟 FASE 1: Calculamos el balance en cuanto obtenemos las solicitudes
         this.calcularBolsaDeDias();
-        this.generarCalendario();
+
+        // 🔄 Ejecución asíncrona para evitar NG0100 al renderizar el calendario
+        setTimeout(() => {
+          this.generarCalendario();
+        }, 0);
       },
       error: (err: any) => console.error('Error al cargar mis solicitudes', err),
     });
@@ -114,7 +121,9 @@ export class PanelEmpleadoComponent implements OnInit {
     request.subscribe({
       next: (data: SolicitudPermiso[]) => {
         this.todasLasSolicitudes = data || [];
-        this.generarCalendario();
+        setTimeout(() => {
+          this.generarCalendario();
+        }, 0);
       },
       error: (err: any) => console.error('Error al cargar solicitudes generales', err),
     });
@@ -133,32 +142,30 @@ export class PanelEmpleadoComponent implements OnInit {
     this.diasUsados = this.misSolicitudes
       .filter((s) => {
         const estado = (s.estado as string)?.toUpperCase();
-        return (
-          estado === 'APROBADO' &&
-          (s.tipo === TipoPermiso.VACACIONES || !s.tipo)
-        );
+        return estado === 'APROBADO' && (s.tipo === TipoPermiso.VACACIONES || !s.tipo);
       })
       .reduce(
         (acc, s) =>
           acc +
-          (s.diasSolicitados || (s as any).diasLaborablesCalculados || this.calcularDiasLaborables(s.fechaInicio, s.fechaFin)),
-        0
+          (s.diasSolicitados ||
+            (s as any).diasLaborablesCalculados ||
+            this.calcularDiasLaborables(s.fechaInicio, s.fechaFin)),
+        0,
       );
 
     // Sumar días pendientes de aprobación
     this.diasPendientes = this.misSolicitudes
       .filter((s) => {
         const estado = (s.estado as string)?.toUpperCase();
-        return (
-          estado === 'PENDIENTE' &&
-          (s.tipo === TipoPermiso.VACACIONES || !s.tipo)
-        );
+        return estado === 'PENDIENTE' && (s.tipo === TipoPermiso.VACACIONES || !s.tipo);
       })
       .reduce(
         (acc, s) =>
           acc +
-          (s.diasSolicitados || (s as any).diasLaborablesCalculados || this.calcularDiasLaborables(s.fechaInicio, s.fechaFin)),
-        0
+          (s.diasSolicitados ||
+            (s as any).diasLaborablesCalculados ||
+            this.calcularDiasLaborables(s.fechaInicio, s.fechaFin)),
+        0,
       );
 
     // Descuento automático de saldo libre
@@ -224,14 +231,15 @@ export class PanelEmpleadoComponent implements OnInit {
       return;
     }
 
-    // PAYLOAD
-    const payload: Partial<SolicitudPermiso> = {
+    // ✅ PAYLOAD CORREGIDO: Evita enviar objetos anidados incompletos que disparen el error 400 Bad Request
+    const payload: any = {
       fechaInicio: this.fechaInicio,
       fechaFin: this.fechaFin,
-      tipo: this.tipoPermisoSelected,
+      tipo: this.tipoPermisoSelected || 'VACACIONES',
       estado: EstadoSolicitud.PENDIENTE,
-      usuario: { id: userId } as any,
-      diasSolicitados: diasSolicitados, // 👈 Se envía el cálculo de días laborables
+      usuarioId: userId, // Referencia directa por ID habitual en Spring Boot DTOs
+      usuario: { id: userId },
+      diasSolicitados: diasSolicitados,
     };
 
     this.apiService.solicitarVacaciones(payload).subscribe({
@@ -244,7 +252,8 @@ export class PanelEmpleadoComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Error enviando solicitud:', err);
-        this.mensajeError = err.error?.error || 'Ocurrió un error al procesar la solicitud.';
+        const backendMessage = err.error?.message || err.error?.error || err.message;
+        this.mensajeError = backendMessage || 'Ocurrió un error al procesar la solicitud.';
       },
     });
   }
@@ -260,15 +269,20 @@ export class PanelEmpleadoComponent implements OnInit {
     // Ajuste para que la semana empiece en Lunes (0=Lu, 6=Do)
     const inicioVacio = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
 
-    this.diasDelMes = [];
+    const nuevosDias: (number | null)[] = [];
 
     for (let i = 0; i < inicioVacio; i++) {
-      this.diasDelMes.push(null);
+      nuevosDias.push(null);
     }
 
     for (let dia = 1; dia <= totalDias; dia++) {
-      this.diasDelMes.push(dia);
+      nuevosDias.push(dia);
     }
+
+    this.diasDelMes = nuevosDias;
+
+    // ✅ Notificar explícitamente a Angular del cambio en el modelo
+    this.cdr.detectChanges();
   }
 
   cambiarMes(direccion: number): void {

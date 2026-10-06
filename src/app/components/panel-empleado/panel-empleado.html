@@ -16,7 +16,7 @@
     </a>
   </header>
 
-  <!-- 🌟 FASE 1: TARJETAS DE SALDO DE DÍAS (BOLSA DE DÍAS) -->
+  <!-- TARJETAS DE SALDO DE DÍAS (BOLSA DE DÍAS) -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
 
     <!-- Días Libres / Disponibles -->
@@ -154,7 +154,7 @@
           <!-- LISTA DE PERSONAS DE VACACIONES EN ESTE DÍA -->
           <div *ngIf="dia" style="display: flex; flex-direction: column; gap: 3px; width: 100%; margin-top: 2px;">
             <div *ngFor="let item of obtenerVacacionesDelDia(dia)"
-                 [style.background]="item.esMio ? (($any(item.estado) === 'Aprobado' || $any(item.estado) === 'APROBADO') ? '#10b981' : ($any(item.estado) === 'Rechazado' || $any(item.estado) === 'RECHAZADO') ? '#ef4444' : '#f59e0b') : '#10b981'"
+                 [style.background]="item.esMio ? (item.estado === 'Aprobado' || item.estado === 'APROBADO' ? '#10b981' : item.estado === 'Rechazado' || item.estado === 'RECHAZADO' ? '#ef4444' : '#f59e0b') : '#10b981'"
                  style="color: white; font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"
                  [title]="item.nombreEmpleado + ' (' + item.estado + ')'">
               {{ item.esMio ? 'Yo' : item.nombreEmpleado }}
@@ -186,12 +186,12 @@
       <tr *ngFor="let s of misSolicitudes" style="border-bottom: 1px solid #f1f5f9;">
         <td style="padding: 12px 10px; color: #94a3b8; font-weight: 600;">#{{ s.id }}</td>
         <td style="padding: 12px 10px; font-weight: 600; color: #1e293b;">{{ s.fechaInicio }} <span style="color:#94a3b8; font-weight: 400;">al</span> {{ s.fechaFin }}</td>
-        <td style="padding: 12px 10px; font-weight: 600; color: #475569;">{{ s.diasSolicitados || s.diasLaborablesCalculados || '-' }} días</td>
+        <td style="padding: 12px 10px; font-weight: 600; color: #475569;">{{ s.diasSolicitados || '-' }} días</td>
         <td style="padding: 12px 10px;">
             <span [ngStyle]="{
               'padding': '3px 10px', 'border-radius': '12px', 'font-size': '12px', 'font-weight': '600',
-              'color': ($any(s.estado) === 'Aprobado' || $any(s.estado) === 'APROBADO') ? '#15803d' : ($any(s.estado) === 'Rechazado' || $any(s.estado) === 'RECHAZADO') ? '#b91c1c' : '#b45309',
-              'background-color': ($any(s.estado) === 'Aprobado' || $any(s.estado) === 'APROBADO') ? '#dcfce7' : ($any(s.estado) === 'Rechazado' || $any(s.estado) === 'RECHAZADO') ? '#fee2e2' : '#fef3c7'
+              'color': (s.estado === 'Aprobado' || s.estado === 'APROBADO') ? '#15803d' : (s.estado === 'Rechazado' || s.estado === 'RECHAZADO') ? '#b91c1c' : '#b45309',
+              'background-color': (s.estado === 'Aprobado' || s.estado === 'APROBADO') ? '#dcfce7' : (s.estado === 'Rechazado' || s.estado === 'RECHAZADO') ? '#fee2e2' : '#fef3c7'
             }">
               ● {{ s.estado || 'Pendiente' }}
             </span>
